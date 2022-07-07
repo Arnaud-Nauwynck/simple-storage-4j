@@ -17,14 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileBlobStorage extends BlobStorage {
 
-	public final String displayName;
-
 	public final File baseDir;
 	
 	// ------------------------------------------------------------------------
 	
-	public FileBlobStorage(String displayName, File baseDir) {
-		this.displayName = displayName;
+	public FileBlobStorage(
+			BlobStorageId id, BlobStorageGroupId groupId, String displayName, // 
+			File baseDir) {
+		super(id, groupId, displayName);
 		this.baseDir = baseDir;
 	}
 

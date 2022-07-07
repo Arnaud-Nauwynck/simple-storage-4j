@@ -14,7 +14,23 @@ import lombok.val;
 
 public abstract class BlobStorage {
 
-    public abstract BlobStoreFileInfo pathInfo(String relativePath);
+	public final BlobStorageId id;
+	
+	public final BlobStorageGroupId groupId;
+	
+	public final String displayName;
+	
+	// ------------------------------------------------------------------------
+	
+    public BlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName) {
+		this.id = id;
+		this.groupId = groupId;
+		this.displayName = displayName;
+	}
+
+    // ------------------------------------------------------------------------
+	
+	public abstract BlobStoreFileInfo pathInfo(String relativePath);
 
 	public abstract boolean exists(String filePath);
 
@@ -40,6 +56,9 @@ public abstract class BlobStorage {
 
 	public abstract void renameFile(String filePath, String newFilePath);
 
+	public OutputStream openWrite(String filePath) {
+		return openWrite(filePath, false);
+	}
 
 	public abstract OutputStream openWrite(String filePath, boolean append);
 	

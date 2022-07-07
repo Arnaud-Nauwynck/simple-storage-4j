@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.simplestorage4j.api.BlobStorage;
+import org.simplestorage4j.api.BlobStorageGroupId;
+import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoreFileInfo;
 
 import lombok.AllArgsConstructor;
@@ -45,8 +47,11 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
      * DataLakeFileSystemClient fsClient = datalakeServiceClient.getFileSystemClient(filesystem);
      * .. = fsClient.getDirectoryClient(subDirPath)
      */
-    public AdlsGen2BlobStorageService(DataLakeDirectoryClient baseDirClient) {
-        this.baseDirClient = baseDirClient;
+    public AdlsGen2BlobStorageService(
+			BlobStorageId id, BlobStorageGroupId groupId, String displayName, // 
+    		DataLakeDirectoryClient baseDirClient) {
+    	super(id, groupId, displayName);
+    	this.baseDirClient = baseDirClient;
         this.azFileSystem = baseDirClient.getFileSystemName();
         this.azBaseDirPath = baseDirClient.getDirectoryPath();
     }

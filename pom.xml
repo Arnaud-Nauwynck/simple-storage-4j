@@ -73,7 +73,12 @@
 				<version>1.18.24</version>
 				<scope>provided</scope>
 			</dependency>
-
+			<dependency>
+	      		<groupId>com.google.guava</groupId>
+	    		<artifactId>guava</artifactId>
+	    		<version>31.1-jre</version>
+	        </dependency>
+	        
 	        <dependency>
 	            <groupId>org.apache.hadoop</groupId>
 	            <artifactId>hadoop-common</artifactId>
@@ -136,12 +141,15 @@
 	
 	
     <dependencies>
-	
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+      		<groupId>com.google.guava</groupId>
+    		<artifactId>guava</artifactId>
+        </dependency>
 		<dependency>
 		  <groupId>org.slf4j</groupId>
 		  <artifactId>slf4j-api</artifactId>
