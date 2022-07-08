@@ -1,5 +1,7 @@
 package org.simplestorage4j.sync.ops;
 
+import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
+
 import lombok.Getter;
 
 @Getter
@@ -17,7 +19,7 @@ public abstract class BlobStorageOperation {
     
     public abstract String taskTypeName();
 
-    public abstract BlobStorageOperationExecutionCostEstimation estimateExecutionCost();
+    public abstract BlobStorageOperationCost estimateExecutionCost();
 
     public abstract BlobStorageOperationExecutionResult execute();
 

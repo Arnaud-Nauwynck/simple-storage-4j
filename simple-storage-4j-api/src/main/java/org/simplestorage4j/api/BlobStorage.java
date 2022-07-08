@@ -30,7 +30,7 @@ public abstract class BlobStorage {
 
     // ------------------------------------------------------------------------
 	
-	public abstract BlobStoreFileInfo pathInfo(String relativePath);
+	public abstract BlobStoreFileInfo pathInfo(String filePath);
 
 	public abstract boolean exists(String filePath);
 
