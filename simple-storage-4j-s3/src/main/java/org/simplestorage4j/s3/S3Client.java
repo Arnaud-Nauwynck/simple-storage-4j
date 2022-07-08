@@ -341,8 +341,8 @@ public class S3Client {
             req.setSdkRequestTimeout(requestTimeoutMillis);
             S3Object s3Object = this.s3Client.getObject(req);
             val resBuffer = new ByteArrayOutputStream(20*1024);
-            byte[] readBuf = new byte[DEFAULT_BUFFER_READ_SIZE];
             try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent()) {
+            	byte[] readBuf = new byte[DEFAULT_BUFFER_READ_SIZE];
                 int readLen;
                 while ((readLen = s3ObjectInputStream.read(readBuf)) > 0) {
                     resBuffer.write(readBuf, 0, readLen);

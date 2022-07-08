@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.ops.dto;
+package org.simplestorage4j.api.iocost.dto;
 
 import java.io.Serializable;
 import java.util.LinkedHashMap;
@@ -11,11 +11,11 @@ import lombok.Setter;
 
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-public class BlobStorageOperationCostDTO implements Serializable {
+public class PerBlobStoragesPreEstimateIOCostDTO implements Serializable {
 
 	/** */
 	private static final long serialVersionUID = 1L;
 	
-	public Map<String,BlobStorageIOCostDTO> perStorage = new LinkedHashMap<>();
+	public Map<String,BlobStoragePreEstimateIOCostDTO> perStorages = new LinkedHashMap<>();
 
 }

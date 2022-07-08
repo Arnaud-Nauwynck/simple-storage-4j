@@ -1,16 +1,16 @@
-package org.simplestorage4j.sync.ops.stats;
+package org.simplestorage4j.api.iocost.immutable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.simplestorage4j.api.BlobStorageId;
-import org.simplestorage4j.sync.ops.dto.BlobStorageIOCostDTO;
+import org.simplestorage4j.api.iocost.dto.BlobStoragePreEstimateIOCostDTO;
 
 import com.google.common.collect.ImmutableMap;
 
 import lombok.val;
 
-public class BlobStorageIOCost {
+public class BlobStoragePreEstimateIOCost {
 	
 	// private long timeMillis; // computable from BlobStorageSpeedAverage
 	public final long ioReadLen;
@@ -21,7 +21,7 @@ public class BlobStorageIOCost {
 	
 	// ------------------------------------------------------------------------
 	
-	public BlobStorageIOCost(long ioReadLen, long ioWriteLen, // 
+	public BlobStoragePreEstimateIOCost(long ioReadLen, long ioWriteLen, // 
 			int callCount, int metadataReadCount, int metadataWriteCount) {
 		this.ioReadLen = ioReadLen;
 		this.ioWriteLen = ioWriteLen;
@@ -30,42 +30,42 @@ public class BlobStorageIOCost {
 		this.metadataWriteCount = metadataWriteCount;
 	}
 	
-	public static BlobStorageIOCost of(long ioReadLen, long ioWriteLen, // 
+	public static BlobStoragePreEstimateIOCost of(long ioReadLen, long ioWriteLen, // 
 			int callCount, int metadataReadCount, int metadataWriteCount) {
-		return new BlobStorageIOCost(ioReadLen, ioWriteLen, // 
+		return new BlobStoragePreEstimateIOCost(ioReadLen, ioWriteLen, // 
 				callCount, metadataReadCount, metadataWriteCount);
 	}
 	
-	public static BlobStorageIOCost ofMetadataCall(int callCount, int metadataReadCount, int metadataWriteCount) {
+	public static BlobStoragePreEstimateIOCost ofMetadataCall(int callCount, int metadataReadCount, int metadataWriteCount) {
 		return of(0L, 0L, callCount, metadataReadCount, metadataWriteCount);
 	}
 
-	public static BlobStorageIOCost ofIoRead(long ioReadLen, int callCount) {
+	public static BlobStoragePreEstimateIOCost ofIoRead(long ioReadLen, int callCount) {
 		return of(ioReadLen, 0L, callCount, 0, 0);
 	}
 
-	public static BlobStorageIOCost ofIoWrite(long ioWriteLen, int callCount) {
+	public static BlobStoragePreEstimateIOCost ofIoWrite(long ioWriteLen, int callCount) {
 		return of(0L, ioWriteLen, callCount, 0, 0);
 	}
 
-	public static BlobStorageIOCost ofIoRead1(long ioReadLen) {
+	public static BlobStoragePreEstimateIOCost ofIoRead1(long ioReadLen) {
 		return ofIoRead(ioReadLen, 1);
 	}
 
-	public static BlobStorageIOCost ofIoWrite1(long ioWriteLen) {
+	public static BlobStoragePreEstimateIOCost ofIoWrite1(long ioWriteLen) {
 		return ofIoWrite(ioWriteLen, 1);
 	}
 	
-	public static BlobStorageIOCost fromDTO(BlobStorageIOCostDTO src) {
-		return new BlobStorageIOCost(src.ioReadLen, src.ioWriteLen, src.callCount, src.metadataReadCount, src.metadataWriteCount);
+	public static BlobStoragePreEstimateIOCost fromDTO(BlobStoragePreEstimateIOCostDTO src) {
+		return new BlobStoragePreEstimateIOCost(src.ioReadLen, src.ioWriteLen, src.callCount, src.metadataReadCount, src.metadataWriteCount);
 	}
 	
-	public static ImmutableMap<BlobStorageId,BlobStorageIOCost> fromDTOsMap(Map<String,BlobStorageIOCostDTO> srcs) {
-		val res = ImmutableMap.<BlobStorageId,BlobStorageIOCost>builder();
+	public static ImmutableMap<BlobStorageId,BlobStoragePreEstimateIOCost> fromDTOsMap(Map<String,BlobStoragePreEstimateIOCostDTO> srcs) {
+		val res = ImmutableMap.<BlobStorageId,BlobStoragePreEstimateIOCost>builder();
 		if (srcs != null) {
 			for(val e : srcs.entrySet()) {
 				val id = new BlobStorageId(e.getKey());
-				val value = BlobStorageIOCost.fromDTO(e.getValue());
+				val value = BlobStoragePreEstimateIOCost.fromDTO(e.getValue());
 				res.put(id, value);
 			}
 		}
@@ -74,12 +74,12 @@ public class BlobStorageIOCost {
 	
 	// ------------------------------------------------------------------------
 	
-	public BlobStorageIOCostDTO toDTO() {
-		return new BlobStorageIOCostDTO(ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount);
+	public BlobStoragePreEstimateIOCostDTO toDTO() {
+		return new BlobStoragePreEstimateIOCostDTO(ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount);
 	}
 
-	public static Map<String,BlobStorageIOCostDTO> toDTOsMap(Map<BlobStorageId,BlobStorageIOCost> srcs) {
-		val res = new LinkedHashMap<String,BlobStorageIOCostDTO>();
+	public static Map<String,BlobStoragePreEstimateIOCostDTO> toDTOsMap(Map<BlobStorageId,BlobStoragePreEstimateIOCost> srcs) {
+		val res = new LinkedHashMap<String,BlobStoragePreEstimateIOCostDTO>();
 		for(val e: srcs.entrySet()) {
 			val id = e.getKey().id;
 			val value = e.getValue().toDTO();
@@ -90,7 +90,7 @@ public class BlobStorageIOCost {
 	
 	@Override
 	public String toString() {
-		return "{IOCost " //
+		return "{PreEstimateIOCost " //
 				+ ((ioReadLen != 0)? "ioRead=" + ioReadLen : "") //
 				+ ((ioWriteLen != 0)? " ioWrite=" + ioWriteLen : "") //
 				+ ((callCount > 1)? " call=" + callCount : "") //

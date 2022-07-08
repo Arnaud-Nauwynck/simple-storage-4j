@@ -1,6 +1,5 @@
 package org.simplestorage4j.api;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,6 +9,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
@@ -140,7 +141,7 @@ public class FileBlobStorage extends BlobStorage {
 		val file = toFile(filePath);
 		try {
 			val res = new FileInputStream(file);
-			skipFully(res, position);
+			BlobStorageIOUtils.skipFully(res, position);
 			return res;
 		} catch(IOException ex) {
 			throw new RuntimeException("Failed to open read from file '" + filePath + "' pos:" + position, ex);
@@ -181,7 +182,7 @@ public class FileBlobStorage extends BlobStorage {
 		int len = (int) lenLong;
 		try (val in = new FileInputStream(file)) {
 			// readFully
-			byte[] res = readFully(in, len);
+			byte[] res = BlobStorageIOUtils.readFully(in, len);
 			return res;
 		} catch(IOException ex) {
 			throw new RuntimeException("Failed to read file '" + filePath + "'", ex);
@@ -198,40 +199,13 @@ public class FileBlobStorage extends BlobStorage {
 		}
 		try (val in = new FileInputStream(file)) {
 			if (position != 0) {
-				skipFully(in, position);
+				BlobStorageIOUtils.skipFully(in, position);
 			}
-			byte[] res = readFully(in, len);
+			byte[] res = BlobStorageIOUtils.readFully(in, len);
 			return res;
 		} catch(IOException ex) {
 			throw new RuntimeException("Failed to read file '" + filePath + "'", ex);
 		}
 	}
-
-	// ------------------------------------------------------------------------
-	
-	private static void skipFully(InputStream in, final long len) throws IOException {
-		int nSkip = 0;
-		while(nSkip < len) {
-			long count = in.skip(len - nSkip);
-			if (count < 0) {
-				throw new EOFException();
-			}
-			nSkip += count;
-		}
-	}
-
-	private static byte[] readFully(FileInputStream in, int len) throws IOException {
-		byte[] res = new byte[len];
-		int n = 0;
-		while (n < len) {
-		    int count = in.read(res, n, len - n);
-		    if (count < 0) {
-		        throw new EOFException(); // should not occur
-		    }
-		    n += count;
-		}
-		return res;
-	}
-
 
 }

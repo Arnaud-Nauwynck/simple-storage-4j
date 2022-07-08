@@ -1,8 +1,9 @@
 package org.simplestorage4j.sync.ops;
 
 import org.simplestorage4j.api.BlobStoragePath;
-import org.simplestorage4j.sync.ops.stats.BlobStorageIOCost;
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 
 import lombok.val;
 
@@ -29,19 +30,19 @@ public class MkdirStorageOperation extends BlobStorageOperation {
     }
 
     @Override
-	public BlobStorageOperationCost estimateExecutionCost() {
-		return BlobStorageOperationCost.of(storagePath.blobStorage, 
-				BlobStorageIOCost.ofMetadataCall(1, 0, 1));
+	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
+		return PerBlobStoragesPreEstimateIOCost.of(storagePath.blobStorage, 
+				BlobStoragePreEstimateIOCost.ofMetadataCall(1, 0, 1));
 	}
 
 	@Override
-	public BlobStorageOperationExecutionResult execute() {
+	public PerBlobStoragesIOTimeResult execute() {
 		val startTime = System.currentTimeMillis();
 		
 		storagePath.mkdirs();
 		
 		val millis = System.currentTimeMillis() - startTime;
-		return BlobStorageOperationExecutionResult.ofMetadataCall(taskId, startTime, millis, // 
+		return PerBlobStoragesIOTimeResult.ofMetadataCall(taskId, startTime, millis, // 
 				storagePath.blobStorage.id, 1, 0, 1);
 	}
 

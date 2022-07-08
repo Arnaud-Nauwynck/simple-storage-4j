@@ -1,13 +1,18 @@
 package org.simplestorage4j.sync.ops;
 
-import org.simplestorage4j.api.BlobStoragePath;
-import org.simplestorage4j.api.util.BlobStorageNotImpl;
-import org.simplestorage4j.sync.ops.stats.BlobStorageIOCost;
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
+import java.io.IOException;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
-import java.util.Objects;
+import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.iocost.counter.BlobStorageIOTimeCounter;
+import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
+import org.simplestorage4j.api.util.BlobStorageIOUtils;
+
+import lombok.val;
 
 /**
  * 
@@ -39,16 +44,33 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
     }
 
     @Override
-	public BlobStorageOperationCost estimateExecutionCost() {
-    	return BlobStorageOperationCost.of( //
-    			srcStoragePath.blobStorage, BlobStorageIOCost.ofIoRead1(srcFileLen),
-    			destStoragePath.blobStorage, BlobStorageIOCost.ofIoWrite1(srcFileLen));
+	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
+    	return PerBlobStoragesPreEstimateIOCost.of( //
+    			srcStoragePath.blobStorage, BlobStoragePreEstimateIOCost.ofIoRead1(srcFileLen),
+    			destStoragePath.blobStorage, BlobStoragePreEstimateIOCost.ofIoWrite1(srcFileLen));
 	}
 
 	@Override
-	public BlobStorageOperationExecutionResult execute() {
-		// TODO
-		throw BlobStorageNotImpl.notImpl();
+	public PerBlobStoragesIOTimeResult execute() {
+		val startTime = System.currentTimeMillis();
+		val inputIOCounter = new BlobStorageIOTimeCounter();
+		val outputIOCounter = new BlobStorageIOTimeCounter();
+		
+		try (val input = srcStoragePath.openRead()) {
+			try (val output = destStoragePath.openWrite()) {
+				// equivalent to .. IOUtils.copy(input, output); 
+				// with IOstats per input|output
+				BlobStorageIOUtils.copy(input, inputIOCounter, output, outputIOCounter);
+			}
+		} catch(IOException ex) {
+			throw new RuntimeException("Failed " + toString(), ex);
+		}
+		
+		val millis = System.currentTimeMillis();
+		return PerBlobStoragesIOTimeResult.of(taskId, startTime, millis,
+				srcStoragePath.blobStorage.id, inputIOCounter.toImmutable(),
+				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
+				);
 	}
 
     @Override

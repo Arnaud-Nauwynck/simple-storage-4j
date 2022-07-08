@@ -306,10 +306,6 @@ public class AdlsGen2BlobStorage extends BlobStorage {
         return new FileAndParentDirClient(parentDirClient, fileClient);
     }
 
-
-
-
-
     protected BlobStoreFileInfo toBlobStoreFileInfo(PathItem item) {
         String name = item.getName();
         boolean isDir = item.isDirectory();

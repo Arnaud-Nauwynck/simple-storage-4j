@@ -2,8 +2,9 @@ package org.simplestorage4j.sync.ops;
 
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
 
 import com.google.common.collect.ImmutableList;
 
@@ -79,13 +80,13 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
     }
 
     @Override
-	public BlobStorageOperationCost estimateExecutionCost() {
+	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
 		// TODO
 		throw BlobStorageNotImpl.notImpl();
 	}
 
 	@Override
-	public BlobStorageOperationExecutionResult execute() {
+	public PerBlobStoragesIOTimeResult execute() {
 		// TODO
 		throw BlobStorageNotImpl.notImpl();
 	}

@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.ops.dto;
+package org.simplestorage4j.api.iocost.dto;
 
 import java.io.Serializable;
 
@@ -9,7 +9,7 @@ import lombok.Setter;
 
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
-public class BlobStorageIOCostDTO implements Serializable {
+public class BlobStoragePreEstimateIOCostDTO implements Serializable {
 
 	/** for java.io.Serializable */
 	private static final long serialVersionUID = 1L;

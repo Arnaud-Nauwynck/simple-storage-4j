@@ -1,6 +1,7 @@
 package org.simplestorage4j.sync.ops;
 
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 
 import lombok.Getter;
 
@@ -19,9 +20,9 @@ public abstract class BlobStorageOperation {
     
     public abstract String taskTypeName();
 
-    public abstract BlobStorageOperationCost estimateExecutionCost();
+    public abstract PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost();
 
-    public abstract BlobStorageOperationExecutionResult execute();
+    public abstract PerBlobStoragesIOTimeResult execute();
 
     // --------------------------------------------------------------------------------------------
 

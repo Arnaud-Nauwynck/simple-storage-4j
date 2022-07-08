@@ -12,6 +12,7 @@ import org.simplestorage4j.api.BlobStorageGroupId;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoreFileInfo;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
+import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -115,7 +116,7 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
         val in = s3Client.openObject(s3.bucketName, s3.key);
         if (position != 0) {
             try {
-                in.skip(position);
+        		BlobStorageIOUtils.skipFully(in, position);
             } catch (IOException ex) {
                 throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex, 
                         displayName, s3.bucketName, s3.key);
@@ -136,32 +137,20 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
         val s3 = pathToS3(filePath);
         val in = s3Client.openObject(s3.bucketName, s3.key);
         if (position != 0) {
-            try {
-                in.skip(position);
+        	try {
+        		BlobStorageIOUtils.skipFully(in, position);
             } catch (IOException ex) {
                 throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex, 
                         displayName, s3.bucketName, s3.key);
             }
         }
-        val res = new byte[len];
-        int remaining = len;
         try {
-            while (remaining > 0) {
-                final int location = len - remaining;
-                final int count = in.read(res, location, remaining);
-                if (-1 == count) { // EOF
-                    break;
-                }
-                remaining -= count;
-            }
+        	val res = BlobStorageIOUtils.readFully(in, len);
+        	return res;
         } catch (IOException ex) {
             throw new WrappedS3ClientException("Failed read(" + ((position != 0)? "pos:" + position + ", ": "") + len + ") on S3 object " + s3, ex, 
                     displayName, s3.bucketName, s3.key);
         }
-        if (remaining != 0) {
-            throw new RuntimeException("EOF reading " + len + " bytes, still remain " + remaining);
-        }
-        return res;
     }
 
     // Write operations
