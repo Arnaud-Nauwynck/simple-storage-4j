@@ -28,12 +28,12 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AdlsGen2BlobStorageService extends BlobStorage {
+public class AdlsGen2BlobStorage extends BlobStorage {
 
     private final DataLakeDirectoryClient baseDirClient;
     private final String azFileSystem;
     private final String azBaseDirPath; // = baseDirClient.getDirectoryPath();
-    
+
     @Getter
     @Setter
     protected boolean verboseWriteLog = false;
@@ -47,11 +47,11 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
      * DataLakeFileSystemClient fsClient = datalakeServiceClient.getFileSystemClient(filesystem);
      * .. = fsClient.getDirectoryClient(subDirPath)
      */
-    public AdlsGen2BlobStorageService(
-			BlobStorageId id, BlobStorageGroupId groupId, String displayName, // 
-    		DataLakeDirectoryClient baseDirClient) {
-    	super(id, groupId, displayName);
-    	this.baseDirClient = baseDirClient;
+    public AdlsGen2BlobStorage(
+            BlobStorageId id, BlobStorageGroupId groupId, String displayName, //
+            DataLakeDirectoryClient baseDirClient) {
+        super(id, groupId, displayName);
+        this.baseDirClient = baseDirClient;
         this.azFileSystem = baseDirClient.getFileSystemName();
         this.azBaseDirPath = baseDirClient.getDirectoryPath();
     }
@@ -75,7 +75,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         val dirClient = dirClientOf(relativePath); // DirClient or FileClient both works for exists()
         return dirClient.exists();
     }
-    
+
     @Override
     public boolean isDirectory(String relativeFilePath) {
         val props = azQueryPathProperties(relativeFilePath);
@@ -93,7 +93,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         val props = azQueryPathProperties(relativeFilePath);
         return props.getLastModified().toInstant().toEpochMilli();
     }
-    
+
     @Override
     public List<BlobStoreFileInfo> list(String relativePath) {
         val dirClient = dirClientOf(relativePath);
@@ -101,16 +101,21 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         val res = pagedIterable.stream().map(item -> toBlobStoreFileInfo(item)).collect(Collectors.toList());
         return res;
     }
-    
+
     @Override
     public void mkdirs(String relativePath) {
         String[] pathElts = relativePath.split("/");
         DataLakeDirectoryClient dirClient = baseDirClient;
+        if (! baseDirClient.exists()) {
+            log.error("baseDir not exists? " + baseDirClient.getDirectoryUrl());
+        }
         for(val pathElt: pathElts) {
-            dirClient = dirClient.getSubdirectoryClient(pathElt);
-            if (! dirClient.exists()) {
-                dirClient.create();
+            val childDirClient = dirClient.getSubdirectoryClient(pathElt);
+            if (! childDirClient.exists()) {
+                log.info("az dir.create " + childDirClient.getDirectoryUrl());
+                childDirClient.create();
             }
+            dirClient = childDirClient;
         }
     }
 
@@ -122,15 +127,15 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         }
         PathProperties props = fileClient.getProperties();
         if (! props.isDirectory()) {
-            log.info("az DataLakeFileClient.delete() " + relativePath); 
+            log.info("az DataLakeFileClient.delete() " + fileClient.getFileUrl());
             fileClient.delete();
         } else {
             val dirClient = dirClientOf(relativePath);
-            log.info("az DataLakeDirectoryClient.delete() " + relativePath); 
+            log.info("az DataLakeDirectoryClient.delete() " + dirClient.getDirectoryUrl());
             dirClient.delete();
         }
     }
-    
+
     @Override
     public void renameFile(String relativeFilePath, String newFilePath) {
         val fileClient = fileClientOf(relativeFilePath);
@@ -206,7 +211,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         logWrite("writeAppend to '" + relativeFilePath + "' append.length:" + appendData.length + " => " + fileLenRes, millis);
         // return fileLenRes;
     }
-    
+
     @Override
     public byte[] readFile(String relativeFilePath) {
         long startTime = System.currentTimeMillis();
@@ -222,7 +227,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         log.info("read '" + relativeFilePath + "' => length:" + data.length + " .. took " + millis + " ms");
         return data;
     }
-    
+
     @Override
     public byte[] readAt(String relativeFilePath, long position, int len) {
         long startTime = System.currentTimeMillis();
@@ -244,7 +249,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
 
     // internal
     // --------------------------------------------------------------------------------------------
-    
+
     private String toAzPath(String relativePath) {
         if (relativePath.isEmpty() || relativePath.equals("/")) {
             return azBaseDirPath;
@@ -254,7 +259,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         }
         return azBaseDirPath + "/" + relativePath; 
     }
-    
+
     private DataLakeDirectoryClient dirClientOf(String relativePath) {
         if (relativePath.isEmpty() || relativePath.equals("/")) {
             return baseDirClient;
@@ -273,7 +278,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         PathProperties res = child.getProperties();
         return res;
     }
-    
+
     private DataLakeDirectoryClient chilDirClientUpTo(DataLakeDirectoryClient base, String[] pathElts, int len) {
         DataLakeDirectoryClient dirClient = base;
         for(int i = 0; i < len; i++) {
@@ -287,7 +292,7 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         val parentDir = chilDirClientUpTo(baseDirClient, pathElts, pathElts.length - 1);  
         return parentDir.getFileClient(pathElts[pathElts.length - 1]);
     }
-    
+
     @AllArgsConstructor
     private static class FileAndParentDirClient {
         public final DataLakeDirectoryClient parentDirClient;
@@ -301,10 +306,10 @@ public class AdlsGen2BlobStorageService extends BlobStorage {
         return new FileAndParentDirClient(parentDirClient, fileClient);
     }
 
-    
 
 
-    
+
+
     protected BlobStoreFileInfo toBlobStoreFileInfo(PathItem item) {
         String name = item.getName();
         boolean isDir = item.isDirectory();

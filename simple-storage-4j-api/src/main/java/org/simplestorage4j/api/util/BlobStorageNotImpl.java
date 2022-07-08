@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.util;
+package org.simplestorage4j.api.util;
 
 public class BlobStorageNotImpl {
 

@@ -1,13 +1,13 @@
 package org.simplestorage4j.sync.ops;
 
-import java.util.Objects;
+import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.util.BlobStorageNotImpl;
+import org.simplestorage4j.sync.ops.stats.BlobStorageIOCost;
+import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
 
 import javax.annotation.Nonnull;
 
-import org.simplestorage4j.api.BlobStoragePath;
-import org.simplestorage4j.sync.ops.stats.BlobStorageIOCost;
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
-import org.simplestorage4j.sync.util.BlobStorageNotImpl;
+import java.util.Objects;
 
 /**
  * 

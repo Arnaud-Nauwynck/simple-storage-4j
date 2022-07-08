@@ -54,6 +54,8 @@ public class BlobStorageOperationFormatter {
 				print(op2.srcStorage.id.id);
 				printSep();
 				print(op2.srcEntries.size());
+				printSep();
+				print(op2.totalEntriesFileSize);
 				printLine();
 				for(val srcEntry: op2.srcEntries) {
 					print('e');

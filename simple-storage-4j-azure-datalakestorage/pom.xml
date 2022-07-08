@@ -11,21 +11,19 @@
     <artifactId>simple-storage-4j-azure-datalakestorage</artifactId>
 
     <properties>
-        <!-- 
-         1.1.0  .. for springboot 2.6.x
-         -->
-        <azure-sdk-bom.version>1.0.6</azure-sdk-bom.version>
-        
-        <azure-identity.version>1.3.6</azure-identity.version>
-        <azure-client-runtime.version>1.7.0</azure-client-runtime.version>
-        
+        <azure-sdk-bom.version>1.2.3</azure-sdk-bom.version>
+
+        <azure-core.version>1.30.0</azure-core.version>
+        <azure-identity.version>1.5.3</azure-identity.version>
+        <azure-storage-common.version>12.17.0</azure-storage-common.version>
         <!-- cf https://docs.microsoft.com/fr-FR/java/api/overview/azure/storage-file-datalake-readme?view=azure-java-stable -->
-        <azure-storage-file-datalake.version>12.10.0</azure-storage-file-datalake.version>
+        <azure-storage-file-datalake.version>12.11.0</azure-storage-file-datalake.version>
+        <!-- 
+        <azure-storage-file-datalake.version>12.11.0</azure-storage-file-datalake.version>
+         -->
+        <azure-storage-blob.version>12.18.0</azure-storage-blob.version>
         
-        <azure-storage-common.version>12.14.0</azure-storage-common.version>
-        <azure-storage-blob.version>12.14.1</azure-storage-blob.version>
-        <azure.sdk.version>1.41.2</azure.sdk.version>
-        <azure-core-http-okhttp.version>1.7.4</azure-core-http-okhttp.version>
+        <azure-core-http-okhttp.version>1.11.0</azure-core-http-okhttp.version>
         
     </properties>
     
@@ -42,19 +40,36 @@
             
             <dependency>
                 <groupId>com.azure</groupId>
+                <artifactId>azure-core</artifactId>
+                <version>${azure-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.azure</groupId>
                 <artifactId>azure-identity</artifactId>
                 <version>${azure-identity.version}</version>
             </dependency>
+            <dependency>
+	            <groupId>com.azure</groupId>
+	            <artifactId>azure-storage-common</artifactId>
+	            <version>${azure-storage-common.version}</version>
+	        </dependency>
             <dependency>
                 <groupId>com.azure</groupId>
                 <artifactId>azure-storage-file-datalake</artifactId>
                 <version>${azure-storage-file-datalake.version}</version>
             </dependency>
+	        <dependency>
+	            <groupId>com.azure</groupId>
+	            <artifactId>azure-storage-blob</artifactId>
+	            <version>${azure-storage-blob.version}</version>
+	        </dependency>
+            <!-- 
             <dependency>
 				<groupId>com.azure</groupId>
 				<artifactId>azure-core-http-okhttp</artifactId>
                 <version>${azure-core-http-okhttp.version}</version>
             </dependency>    
+             -->
 	   </dependencies>
 	</dependencyManagement>
 	
@@ -73,8 +88,13 @@
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
+            <artifactId>azure-storage-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.azure</groupId>
             <artifactId>azure-storage-file-datalake</artifactId>
         </dependency>
+		  
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-http-okhttp</artifactId>

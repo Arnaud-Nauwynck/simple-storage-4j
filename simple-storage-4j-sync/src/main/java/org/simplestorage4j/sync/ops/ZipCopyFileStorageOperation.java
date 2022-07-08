@@ -1,15 +1,17 @@
 package org.simplestorage4j.sync.ops;
 
-import java.util.Objects;
+import org.simplestorage4j.api.BlobStorage;
+import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.util.BlobStorageNotImpl;
+import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
+
+import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
 
-import org.simplestorage4j.api.BlobStorage;
-import org.simplestorage4j.api.BlobStoragePath;
-import org.simplestorage4j.sync.ops.stats.BlobStorageOperationCost;
-import org.simplestorage4j.sync.util.BlobStorageNotImpl;
+import java.util.Objects;
 
-import com.google.common.collect.ImmutableList;
+import lombok.val;
 
 /**
  * 
@@ -21,6 +23,8 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 	public final @Nonnull BlobStorage srcStorage;
     public final ImmutableList<SrcStorageZipEntry> srcEntries;
 
+    public final long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
+    
 	/**
 	 * 
 	 */
@@ -59,6 +63,12 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
         this.destStoragePath = Objects.requireNonNull(destStoragePath);
         this.srcStorage = srcStorage;
         this.srcEntries = Objects.requireNonNull(srcEntries);
+        long totalEntriesFileSize = 0;
+        for(val srcEntry: srcEntries) {
+            totalEntriesFileSize += srcEntry.srcFileLen;
+        }
+        this.totalEntriesFileSize = totalEntriesFileSize;
+
     }
 
     // ------------------------------------------------------------------------
@@ -83,7 +93,8 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 	@Override
 	public String toString() {
 		return "{zip-copy-file " // 
-				+ " dest:" + destStoragePath // 
+				+ " dest:" + destStoragePath //
+				+ " totalEntriesFileSize: " + totalEntriesFileSize
 				+ ", srcEntries=" + srcEntries 
 				+ "}";
 	}
