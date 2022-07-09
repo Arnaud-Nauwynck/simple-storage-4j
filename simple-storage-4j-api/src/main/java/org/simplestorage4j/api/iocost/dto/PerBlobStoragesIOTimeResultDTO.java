@@ -19,7 +19,7 @@ public class PerBlobStoragesIOTimeResultDTO implements Serializable {
 	/** for java.io.Serializable */
 	private static final long serialVersionUID = 1L;
 
-	public long taskId;
+	public int taskId;
 
 	public long startTime;
 	public long elapsedMillis;

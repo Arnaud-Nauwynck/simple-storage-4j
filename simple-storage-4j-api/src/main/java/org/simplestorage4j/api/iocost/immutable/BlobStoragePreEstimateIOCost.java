@@ -30,6 +30,16 @@ public class BlobStoragePreEstimateIOCost {
 		this.metadataWriteCount = metadataWriteCount;
 	}
 	
+	public static BlobStoragePreEstimateIOCost sum(
+			BlobStoragePreEstimateIOCost left, BlobStoragePreEstimateIOCost right) {
+		return new BlobStoragePreEstimateIOCost(
+				left.ioReadLen + right.ioReadLen, 
+				left.ioWriteLen + right.ioWriteLen, // 
+				left.callCount + right.callCount, 
+				left.metadataReadCount + right.metadataReadCount, 
+				left.metadataWriteCount + right.metadataWriteCount);
+	}
+	
 	public static BlobStoragePreEstimateIOCost of(long ioReadLen, long ioWriteLen, // 
 			int callCount, int metadataReadCount, int metadataWriteCount) {
 		return new BlobStoragePreEstimateIOCost(ioReadLen, ioWriteLen, // 

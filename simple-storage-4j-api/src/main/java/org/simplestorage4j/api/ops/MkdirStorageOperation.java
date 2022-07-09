@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.ops;
+package org.simplestorage4j.api.ops;
 
 import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;

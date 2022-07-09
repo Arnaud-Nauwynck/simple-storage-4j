@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.ops;
+package org.simplestorage4j.api.ops;
 
 import java.io.IOException;
 import java.util.Objects;

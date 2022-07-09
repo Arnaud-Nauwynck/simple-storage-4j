@@ -8,7 +8,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 /**
- * wrapper for {BlobStorage, String path}
+ * immutable wrapper for {BlobStorage, String path}
  */
 public class BlobStoragePath {
 

@@ -1,7 +1,8 @@
-package org.simplestorage4j.sync.ops;
+package org.simplestorage4j.api.ops;
 
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
@@ -81,8 +82,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
     @Override
 	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
-		// TODO
-		throw BlobStorageNotImpl.notImpl();
+    	val srcIOCost = BlobStoragePreEstimateIOCost.ofIoRead(totalEntriesFileSize, srcEntries.size());
+    	val destIOCost = BlobStoragePreEstimateIOCost.ofIoWrite(totalEntriesFileSize, 1);
+    	return PerBlobStoragesPreEstimateIOCost.of(srcStorage, srcIOCost,
+    			destStoragePath.blobStorage, destIOCost);
 	}
 
 	@Override

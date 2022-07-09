@@ -1,4 +1,4 @@
-package org.simplestorage4j.sync.ops.encoder;
+package org.simplestorage4j.api.ops.encoder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -6,11 +6,11 @@ import java.io.PrintWriter;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.BlobStorageRepository;
-import org.simplestorage4j.sync.ops.BlobStorageOperation;
-import org.simplestorage4j.sync.ops.CopyFileStorageOperation;
-import org.simplestorage4j.sync.ops.MkdirStorageOperation;
-import org.simplestorage4j.sync.ops.ZipCopyFileStorageOperation;
-import org.simplestorage4j.sync.ops.ZipCopyFileStorageOperation.SrcStorageZipEntry;
+import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.CopyFileStorageOperation;
+import org.simplestorage4j.api.ops.MkdirStorageOperation;
+import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation;
+import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation.SrcStorageZipEntry;
 
 import com.google.common.collect.ImmutableList;
 

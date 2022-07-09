@@ -118,4 +118,23 @@ public class BlobStorageIOUtils {
 		return res;
 	}
 
+    public static void copy(
+    		final byte[] data,  
+    		final @Nonnull OutputStream output, final @Nonnull BlobStorageIOTimeCounter outputIOCounter
+    		) throws IOException {
+    	copy(data, 0, data.length, output, outputIOCounter);
+    }
+    
+    public static void copy(
+    		final byte[] data, int fromPos, int len, 
+    		final @Nonnull OutputStream output, final @Nonnull BlobStorageIOTimeCounter outputIOCounter
+    		) throws IOException {
+    	val startWriteTime = System.currentTimeMillis(); 
+
+    	output.write(data, fromPos, len);
+    	
+    	val writeMillis = System.currentTimeMillis() - startWriteTime; 
+    	outputIOCounter.incr(writeMillis, 0L, len, 1, 0, 0);
+    }
+
 }

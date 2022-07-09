@@ -13,17 +13,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PerBlobStoragesIOTimeResult {
 
-	public final long taskId;
+	public final int taskId;
 
 	public final long startTime;
 	public final long elapsedMillis;
 
 	public final String errorMessage;
 	public final Exception exception;
-	
-	public final ImmutableMap<BlobStorageId,BlobStorageIOTimeResult> countPerStorage;
 
-	
+	public final ImmutableMap<BlobStorageId,BlobStorageIOTimeResult> countPerStorage;
 
 	// ------------------------------------------------------------------------
 
