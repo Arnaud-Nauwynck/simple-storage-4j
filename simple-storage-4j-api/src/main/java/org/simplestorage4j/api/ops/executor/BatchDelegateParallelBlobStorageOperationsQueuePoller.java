@@ -7,13 +7,14 @@ import java.util.concurrent.ExecutorService;
 
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
 import lombok.val;
 
 /**
  * implementation of BlobStorageOperationsRunner using parallel threads ExecutorService
  */
-public class BatchDelegateParallelBlobStorageOperationsRunner extends AbstractBlobStorageOperationRunner {
+public class BatchDelegateParallelBlobStorageOperationsQueuePoller extends AbstractBlobStorageOperationQueuePoller {
 
 	private final int maxTotalIOPerBatch;
 	private final int maxOpPerBatch;
@@ -31,11 +32,12 @@ public class BatchDelegateParallelBlobStorageOperationsRunner extends AbstractBl
 	
 	// ------------------------------------------------------------------------
 	
-	public BatchDelegateParallelBlobStorageOperationsRunner(BlobStorageOperationExecQueue queue, //
+	public BatchDelegateParallelBlobStorageOperationsQueuePoller(
+			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx, //
 			BlobStorageOperationBatchExecutor delegate, int maxTotalIOPerBatch, int maxOpPerBatch, //
 			ExecutorService executorService, int maxParallelSubmittedCount //
 			) {
-		super(queue);
+		super(queue, execCtx);
 		this.delegate = delegate;
 		this.maxTotalIOPerBatch = maxTotalIOPerBatch;
 		this.maxOpPerBatch = maxOpPerBatch;
@@ -117,7 +119,7 @@ public class BatchDelegateParallelBlobStorageOperationsRunner extends AbstractBl
 		}
 		try {
 			// *** the Biggy ***
-			val opResults = delegate.executeBatch(opBatch);
+			val opResults = delegate.executeBatch(execCtx, opBatch);
 
 			val opByIds = new HashMap<Integer,BlobStorageOperation>();
 			for(val op: opBatch) {

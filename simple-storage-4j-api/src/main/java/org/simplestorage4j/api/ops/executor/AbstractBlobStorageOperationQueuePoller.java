@@ -2,16 +2,21 @@ package org.simplestorage4j.api.ops.executor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class AbstractBlobStorageOperationRunner {
+import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
+
+public abstract class AbstractBlobStorageOperationQueuePoller {
 
 	protected final BlobStorageOperationExecQueue queue;
-
+	protected final BlobStorageOperationExecContext execCtx;
+	
 	private AtomicBoolean interruptRequested = new AtomicBoolean();
 	
 	// ------------------------------------------------------------------------
 	
-	public AbstractBlobStorageOperationRunner(BlobStorageOperationExecQueue queue) {
+	public AbstractBlobStorageOperationQueuePoller(BlobStorageOperationExecQueue queue,
+			BlobStorageOperationExecContext execCtx) {
 		this.queue = queue;
+		this.execCtx = execCtx;
 	}
 	
 	// ------------------------------------------------------------------------

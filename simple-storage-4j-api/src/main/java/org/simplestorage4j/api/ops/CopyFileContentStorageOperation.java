@@ -13,10 +13,12 @@ import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import lombok.val;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  */
+@Slf4j
 public class CopyFileContentStorageOperation extends BlobStorageOperation {
     
 	public final @Nonnull BlobStoragePath destStoragePath;
@@ -47,7 +49,7 @@ public class CopyFileContentStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute() {
+	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		val outputIOCounter = new BlobStorageIOTimeCounter();
 		
@@ -58,9 +60,11 @@ public class CopyFileContentStorageOperation extends BlobStorageOperation {
 		}
 		
 		val millis = System.currentTimeMillis();
-		return PerBlobStoragesIOTimeResult.of(taskId, startTime, millis,
+		val res = PerBlobStoragesIOTimeResult.of(taskId, startTime, millis,
 				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
 				);
+		ctx.logIncr_copyFileContent(this, res, logPrefix -> log.info(logPrefix + "(" + destStoragePath + ", srcContent.len:" + srcContent.length + ")"));
+		return res;
 	}
 
     @Override

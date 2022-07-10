@@ -51,7 +51,7 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute() {
+	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		val inputIOCounter = new BlobStorageIOTimeCounter();
 		val outputIOCounter = new BlobStorageIOTimeCounter();

@@ -1,18 +1,20 @@
 package org.simplestorage4j.api.ops.executor;
 
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
 import lombok.val;
 
 /**
  * implementation of BlobStorageOperationsRunner using single-thread
  */
-public class SingleThreadBlobStorageOperationsRunner extends AbstractBlobStorageOperationRunner {
+public class SingleThreadBlobStorageOperationsQueuePoller extends AbstractBlobStorageOperationQueuePoller {
 
 	// ------------------------------------------------------------------------
 	
-	public SingleThreadBlobStorageOperationsRunner(BlobStorageOperationExecQueue queue) {
-		super(queue);
+	public SingleThreadBlobStorageOperationsQueuePoller(
+			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx) {
+		super(queue, execCtx);
 	}
 	
 	// ------------------------------------------------------------------------
@@ -33,7 +35,7 @@ public class SingleThreadBlobStorageOperationsRunner extends AbstractBlobStorage
 
 	private void doExecOp(BlobStorageOperation op) {
 		try {
-			val opResult = op.execute();
+			val opResult = op.execute(execCtx);
 			
 			queue.onOpExecuted(opResult, op);
 		} catch(Throwable ex) {

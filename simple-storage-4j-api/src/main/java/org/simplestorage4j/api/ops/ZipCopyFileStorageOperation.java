@@ -1,5 +1,9 @@
 package org.simplestorage4j.api.ops;
 
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
+
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
@@ -9,15 +13,13 @@ import org.simplestorage4j.api.util.BlobStorageNotImpl;
 
 import com.google.common.collect.ImmutableList;
 
-import javax.annotation.Nonnull;
-
-import java.util.Objects;
-
 import lombok.val;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  */
+@Slf4j
 public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
 	public final BlobStoragePath destStoragePath;
@@ -89,8 +91,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute() {
+	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
+		PerBlobStoragesIOTimeResult res = null;
 		// TODO
+		ctx.logIncr_zipCopyFile(this, res , logPrefix -> log.info(logPrefix + "(" + destStoragePath + ", srcEntries.count:" + srcEntries.size() + ", totalEntriesFileSize:" + totalEntriesFileSize + ")"));
 		throw BlobStorageNotImpl.notImpl();
 	}
 

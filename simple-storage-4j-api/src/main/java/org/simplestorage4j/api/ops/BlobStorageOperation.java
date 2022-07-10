@@ -25,7 +25,7 @@ public abstract class BlobStorageOperation {
 
     public abstract PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost();
 
-    public abstract PerBlobStoragesIOTimeResult execute();
+    public abstract PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx);
 
     // --------------------------------------------------------------------------------------------
 

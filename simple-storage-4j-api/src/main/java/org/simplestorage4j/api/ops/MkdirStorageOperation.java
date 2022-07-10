@@ -6,10 +6,12 @@ import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 
 import lombok.val;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  */
+@Slf4j
 public class MkdirStorageOperation extends BlobStorageOperation {
 
 	public final BlobStoragePath storagePath;
@@ -36,14 +38,16 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute() {
+	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		
 		storagePath.mkdirs();
 		
 		val millis = System.currentTimeMillis() - startTime;
-		return PerBlobStoragesIOTimeResult.ofMetadataCall(taskId, startTime, millis, // 
+		val res = PerBlobStoragesIOTimeResult.ofMetadataCall(taskId, startTime, millis, // 
 				storagePath.blobStorage.id, 1, 0, 1);
+		ctx.logIncr_mkdir(this, res, logPrefix -> log.info(logPrefix + "(" + storagePath + ")"));
+		return res;
 	}
 
 	@Override

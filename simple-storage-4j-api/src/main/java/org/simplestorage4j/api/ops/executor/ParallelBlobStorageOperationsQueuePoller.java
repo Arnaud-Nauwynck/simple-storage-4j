@@ -3,13 +3,14 @@ package org.simplestorage4j.api.ops.executor;
 import java.util.concurrent.ExecutorService;
 
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
 import lombok.val;
 
 /**
  * implementation of BlobStorageOperationsRunner using parallel threads ExecutorService
  */
-public class ParallelBlobStorageOperationsRunner extends AbstractBlobStorageOperationRunner {
+public class ParallelBlobStorageOperationsQueuePoller extends AbstractBlobStorageOperationQueuePoller {
 
 	private final ExecutorService executorService;
 	
@@ -24,10 +25,11 @@ public class ParallelBlobStorageOperationsRunner extends AbstractBlobStorageOper
 	
 	// ------------------------------------------------------------------------
 	
-	public ParallelBlobStorageOperationsRunner(BlobStorageOperationExecQueue queue, //
+	public ParallelBlobStorageOperationsQueuePoller( //
+			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx, //
 			ExecutorService executorService,
 			int maxParallelSubmittedCount) {
-		super(queue);
+		super(queue, execCtx);
 		this.executorService = executorService;
 		this.maxParallelSubmittedCount = maxParallelSubmittedCount;
 	}
@@ -83,7 +85,7 @@ public class ParallelBlobStorageOperationsRunner extends AbstractBlobStorageOper
 			currParallelProcessingCount++;
 		}
 		try {
-			val opResult = op.execute();
+			val opResult = op.execute(execCtx);
 			
 			queue.onOpExecuted(opResult, op);
 		} catch(Throwable ex) {
