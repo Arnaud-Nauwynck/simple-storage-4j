@@ -52,10 +52,10 @@ public class ExecutorSessionService {
 				log.warn("session '" + sessionId + "' not found.. ignore onExecutorStop()");
 				return;
 			}
-			int polledCount = found.getPolledJobTasks().size();
-			if (polledCount != 0) {
-				log.info("onExecutorStop " + sessionId + ", found " + polledCount + " polled tasks, re-put to queues");
-				storageOpsService.onExecutorStop_reputPolledTasks(found);
+			val polledJobTasks = found.clearGetCopyPolledJobTasks();
+			if (! polledJobTasks.isEmpty()) {
+				log.info("onExecutorStop " + sessionId + ", found " + polledJobTasks.size() + " polled tasks, re-put to queues");
+				storageOpsService.onExecutorStop_reputPolledTasks(req, polledJobTasks);
 			}
 		}
 	}

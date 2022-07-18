@@ -10,12 +10,14 @@ import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueue;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueueHook;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorOpsFinishedRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseDTO;
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddOpsToJobQueueRequestDTO;
@@ -36,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StorageJobOpsQueueService {
 
 	@Autowired
-	private BlobStorageDtoMapper dtoMapper;
+	private BlobStorageOperationDtoResolver dtoMapper;
 	
 	private final Object lock = new Object();
 	
@@ -169,9 +171,10 @@ public class StorageJobOpsQueueService {
 		return new ExecutorSessionPollOpResponseDTO(opDto);
 	}
 
-	public void onExecutorStop_reputPolledTasks(ExecutorSessionEntry sessionEntry) {
+	public void onExecutorStop_reputPolledTasks(ExecutorSessionStopRequestDTO req,
+			List<PolledJobTaskEntry> polledJobTasks) {
 		synchronized(lock) {
-			for(val polled: sessionEntry.getPolledJobTasks().values()) {
+			for(val polled: polledJobTasks) {
 				val jobId = polled.jobId;
 				val jobOpQueueEntry = jobOpQueueById.get(jobId);
 				if (jobOpQueueEntry == null) {
@@ -194,8 +197,6 @@ public class StorageJobOpsQueueService {
 			for(val taskResult: req.taskResults) {
 				PerBlobStoragesIOTimeResult result = PerBlobStoragesIOTimeResult.fromDTO(taskResult);
 				jobEntry.queue.onOpExecuted(result, taskResult.taskId);
-				
-				// TOADD update op stats per storage... for speed / counters 
 			}
 		}
 	}

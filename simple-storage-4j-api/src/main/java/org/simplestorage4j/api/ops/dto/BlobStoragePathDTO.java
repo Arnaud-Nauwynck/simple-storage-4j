@@ -1,4 +1,4 @@
-package org.simplestorage4j.opscommon.dto.ops;
+package org.simplestorage4j.api.ops.dto;
 
 import java.io.Serializable;
 

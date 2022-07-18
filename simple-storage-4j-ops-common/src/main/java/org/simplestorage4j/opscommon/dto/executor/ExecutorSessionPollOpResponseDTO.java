@@ -2,7 +2,7 @@ package org.simplestorage4j.opscommon.dto.executor;
 
 import java.io.Serializable;
 
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

@@ -12,6 +12,10 @@ public class BlobStorageId {
 		this.id = id;
 	}
 
+	public static BlobStorageId of(String id) {
+		return new BlobStorageId(id);
+	}
+
 	// ------------------------------------------------------------------------
 	
 	@Override

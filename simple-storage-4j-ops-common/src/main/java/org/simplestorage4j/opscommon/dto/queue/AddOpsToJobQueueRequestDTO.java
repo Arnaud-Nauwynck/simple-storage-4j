@@ -3,7 +3,7 @@ package org.simplestorage4j.opscommon.dto.queue;
 import java.io.Serializable;
 import java.util.List;
 
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

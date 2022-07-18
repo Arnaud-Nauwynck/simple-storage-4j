@@ -1,14 +1,14 @@
-package org.simplestorage4j.opscommon.dto.ops;
+package org.simplestorage4j.api.ops.dto;
 
 import java.io.Serializable;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO.CopyFileContentStorageOperationDTO;
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO.CopyFileStorageOperationDTO;
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO.MkdirStorageOperationDTO;
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileContentStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MkdirStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -37,7 +37,6 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// public abstract String getType();
 
-	public int jobId;
 	public int taskId;
 
 	// ------------------------------------------------------------------------
@@ -51,9 +50,9 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 		public @Nonnull BlobStoragePathDTO destStoragePath;
 		public @Nonnull byte[] srcContent;
 
-		public CopyFileContentStorageOperationDTO(int jobId, int taskId, //
+		public CopyFileContentStorageOperationDTO(int taskId, //
 				BlobStoragePathDTO destStoragePath, byte[] srcContent) {
-			super(jobId, taskId);
+			super(taskId);
 			this.destStoragePath = destStoragePath;
 			this.srcContent = srcContent;
 		}
@@ -73,10 +72,10 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 		public @Nonnull BlobStoragePathDTO srcStoragePath;
 		public long srcFileLen;
 
-		public CopyFileStorageOperationDTO(int jobId, int taskId, //
+		public CopyFileStorageOperationDTO(int taskId, //
 				BlobStoragePathDTO destStoragePath, BlobStoragePathDTO srcStoragePath,
 				long srcFileLen) {
-			super(jobId, taskId);
+			super(taskId);
 			this.destStoragePath = destStoragePath;
 			this.srcStoragePath = srcStoragePath;
 			this.srcFileLen = srcFileLen;
@@ -93,9 +92,9 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 		public @Nonnull BlobStoragePathDTO storagePath;
 
-		public MkdirStorageOperationDTO(int jobId, int taskId, //
+		public MkdirStorageOperationDTO(int taskId, //
 				BlobStoragePathDTO storagePath) {
-			super(jobId, taskId);
+			super(taskId);
 			this.storagePath = storagePath;
 		}
 
@@ -113,10 +112,10 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	    public List<SrcStorageZipEntryDTO> srcEntries;
 	    // public long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
 
-	    public ZipCopyFileStorageOperationDTO(int jobId, int taskId, //
+	    public ZipCopyFileStorageOperationDTO(int taskId, //
 	    		BlobStoragePathDTO destStoragePath, String srcStorageId,
 	    		List<SrcStorageZipEntryDTO> srcEntries) {
-	    	super(jobId, taskId);
+	    	super(taskId);
 	    	this.destStoragePath = destStoragePath;
 	    	this.srcStorageId = srcStorageId;
 	    	this.srcEntries = srcEntries;

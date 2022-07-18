@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.simplestorage4j.opscommon.dto.ops.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
