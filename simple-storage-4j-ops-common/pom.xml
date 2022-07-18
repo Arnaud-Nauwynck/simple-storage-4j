@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.simplestorage4j</groupId>
+	    <artifactId>simple-storage-4j-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>..</relativePath>
+	</parent>
+	
+    <artifactId>simple-storage-4j-ops-common</artifactId>
+	
+    <dependencies>
+        <!-- module dependencies -->	
+    	<dependency>
+	    	<groupId>org.simplestorage4j</groupId>
+	    	<artifactId>simple-storage-4j-api</artifactId>
+    	</dependency>
+
+        <!-- Thirdparty dependencies -->	
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+    </dependencies>
+
+</project>

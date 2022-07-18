@@ -26,7 +26,9 @@
 		<module>simple-storage-4j-azure-datalakestorage</module>
 		<module>simple-storage-4j-s3</module>
 		<module>simple-storage-4j-hadoop3</module>
-		<module>simple-storage-4j-sync</module>
+		<module>simple-storage-4j-ops-common</module>
+		<module>simple-storage-4j-ops-server</module>
+		<module>simple-storage-4j-ops-executor</module>
 	</modules>
 	
 	<dependencyManagement>
@@ -52,9 +54,19 @@
 		    	<artifactId>simple-storage-4j-hadoop3</artifactId>
 		    	<version>${project.version}</version>
 	    	</dependency>
-	    	<dependency>
+			<dependency>
 		    	<groupId>org.simplestorage4j</groupId>
-		    	<artifactId>simple-storage-4j-sync</artifactId>
+		    	<artifactId>simple-storage-4j-ops-common</artifactId>
+		    	<version>${project.version}</version>
+	    	</dependency>
+			<dependency>
+		    	<groupId>org.simplestorage4j</groupId>
+		    	<artifactId>simple-storage-4j-ops-server</artifactId>
+		    	<version>${project.version}</version>
+	    	</dependency>
+			<dependency>
+		    	<groupId>org.simplestorage4j</groupId>
+		    	<artifactId>simple-storage-4j-ops-executor</artifactId>
 		    	<version>${project.version}</version>
 	    	</dependency>
 

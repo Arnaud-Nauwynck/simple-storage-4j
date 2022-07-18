@@ -29,4 +29,15 @@ public class PerBlobStoragesIOTimeResultDTO implements Serializable {
 	
 	public Map<String,BlobStorageIOTimeResultDTO> perStorageIOCosts = new LinkedHashMap<>();
 
+	@Override
+	public String toString() {
+		return "{taskId=" + taskId 
+				// + ", startTime=" + startTime 
+				+ ", elapsedMillis=" + elapsedMillis 
+				+ ((errorMessage != null)? ", errorMessage=" + errorMessage : "")
+				+ ((exception != null)? ", exception=" + exception : "")
+				// + ", perStorageIOCosts=" + perStorageIOCosts 
+				+ "}";
+	}
+
 }
