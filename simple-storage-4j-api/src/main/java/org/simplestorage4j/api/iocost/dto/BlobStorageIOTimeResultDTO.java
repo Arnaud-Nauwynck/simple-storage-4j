@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 
+ * DTO class for BlobStorageIOTimeResult
  */
 @NoArgsConstructor @AllArgsConstructor
 @Getter @Setter
@@ -36,4 +36,17 @@ public class BlobStorageIOTimeResultDTO implements Serializable {
 				left.metadataWriteCount + right.metadataWriteCount
 				);
 	}
+
+	@Override
+	public String toString() {
+		return "{" //
+				+ "elapsedTimeMillis=" + elapsedTimeMillis //
+				+ ((ioReadLen != 0)? ", ioReadLen=" + ioReadLen : "") //
+				+ ((ioWriteLen != 0)? ", ioWriteLen=" + ioWriteLen : "") //
+				+ ((callCount > 1)? ", callCount=" + callCount : "") //
+				+ ((metadataReadCount != 0)? ", metadataReadCount=" + metadataReadCount : "") //
+				+ ((metadataWriteCount != 0)? ", metadataWriteCount=" + metadataWriteCount : "") //
+				+ "}";
+	}
+
 }

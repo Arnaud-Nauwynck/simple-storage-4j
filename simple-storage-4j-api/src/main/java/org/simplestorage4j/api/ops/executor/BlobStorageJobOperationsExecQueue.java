@@ -8,12 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import org.simplestorage4j.api.iocost.counter.PerBlobStoragesIOTimeCounter;
 import org.simplestorage4j.api.iocost.counter.PerBlobStoragesPreEstimateIOCostCounter;
 import org.simplestorage4j.api.iocost.dto.QueueStatsDTO;
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 
+import lombok.Getter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,21 +24,26 @@ import lombok.extern.slf4j.Slf4j;
  * Queue for BlobStorageOperation execution
  */
 @Slf4j
-public class BlobStorageOperationExecQueue {
+public class BlobStorageJobOperationsExecQueue {
 
-	private final Object lock = new Object();
+	@Getter
+	private final long jobId;
 
 	private final boolean keepDoneOps;
+	
+	private final Object lock = new Object();
 	
 	/**
 	 * operation ready to be executed
 	 */
+	@GuardedBy("lock")
 	private final ArrayDeque<BlobStorageOperation> queuedOps = new ArrayDeque<>();
 	
 	/**
 	 * operation polled by caller and running, to be marked later as done/error.
 	 */
-	private final Map<Integer,BlobStorageOperation> runningOps = new HashMap<>();
+	@GuardedBy("lock")
+	private final Map<Long,BlobStorageOperation> runningOps = new HashMap<>();
 	
 	// TOADD ops that need to wait for dependencies ops to be finished
 //	private final Map<Integer,BlobStorageOperation> waitingOps = new HashMap<>();
@@ -43,14 +51,17 @@ public class BlobStorageOperationExecQueue {
 	/**
 	 * optionnal, operations fully done. can be purged
 	 */
+	@GuardedBy("lock")
 	private final List<BlobStorageOperation> doneOps;
 	
+	@GuardedBy("lock")
 	private int doneOpsCount;
 	
 	/**
 	 * operations that failed, and may be retryed later if possible
 	 */
-	private final Map<Integer,BlobStorageOperation> errorOps = new HashMap<>();
+	@GuardedBy("lock")
+	private final Map<Long,BlobStorageOperation> errorOps = new HashMap<>();
 
 	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter(); 
 	
@@ -64,14 +75,16 @@ public class BlobStorageOperationExecQueue {
 	
 	// ------------------------------------------------------------------------
 	
-	public BlobStorageOperationExecQueue(BlobStorageOperationExecQueueHook opHook) {
-		this(opHook, true, Collections.emptyList());
+	public BlobStorageJobOperationsExecQueue(long jobId, BlobStorageOperationExecQueueHook opHook) {
+		this(jobId, opHook, true, Collections.emptyList());
 	}
 	
-	public BlobStorageOperationExecQueue(
+	public BlobStorageJobOperationsExecQueue(
+			long jobId, 
 			BlobStorageOperationExecQueueHook opHook,
 			boolean keepDoneOps, 
 			Collection<BlobStorageOperation> queuedOps) {
+		this.jobId = jobId;
 		this.opHook = opHook;
 		this.keepDoneOps = keepDoneOps;
 		this.doneOps = (keepDoneOps)? new ArrayList<>() : null;
@@ -134,65 +147,22 @@ public class BlobStorageOperationExecQueue {
 		return res;
 	}
 	
-	public void onOpExecuted(PerBlobStoragesIOTimeResult result, BlobStorageOperation op) {
+	public void onOpExecuted(BlobStorageOperationResult result) {
 		if (result.errorMessage == null) {
-			onOpExecutedSuccess(result, op);
+			onOpExecutedSuccess(result);
 		} else {
-			onOpExecutedError(result, op);
+			onOpExecutedError(result);
 		}
 	}
 
-	public void onOpExecuted(PerBlobStoragesIOTimeResult result, int taskId) {
-		if (result.errorMessage == null) {
-			onOpExecutedSuccess(result, taskId);
-		} else {
-			onOpExecutedError(result, taskId);
-		}
-	}
-	
-	protected void onOpExecutedSuccess(PerBlobStoragesIOTimeResult result, BlobStorageOperation op) {
-		synchronized(lock) {
-			runningOps.remove(op.taskId);
-			this.doneOpsCount++;
-			if (keepDoneOps) {
-				doneOps.add(op);
-			}
-		}
-		val opPreEstimateCost = op.preEstimateExecutionCost();
-		runningPreEstimateIOCosts.decr(opPreEstimateCost);
-		perStoragesIOTimeCounter.incr(result);
-		
-		// TOADD update op stats per storage... for speed / counters 
-		
-		if (opHook != null) {
-			opHook.onOpExecutedSuccess(result, op);
-		}
-	}
-
-	protected void onOpExecutedError(PerBlobStoragesIOTimeResult result, BlobStorageOperation op) {
-		synchronized(lock) {
-			runningOps.remove(op.taskId);
-			errorOps.put(op.taskId, op);
-		}
-		val opPreEstimateCost = op.preEstimateExecutionCost();
-		runningPreEstimateIOCosts.decr(opPreEstimateCost);
-		perStoragesIOTimeCounter.incr(result);
-		perStoragesErrorIOTimeCounter.incr(result);
-		
-		// TOADD update op stats per storage... for speed / counters 
-		
-		if (opHook != null) {
-			opHook.onOpExecutedError(result, op);
-		}
-	}
-	
-	protected void onOpExecutedSuccess(PerBlobStoragesIOTimeResult result, int taskId) {
+	protected void onOpExecutedSuccess(BlobStorageOperationResult result) {
 		BlobStorageOperation op;
+		val taskId = result.taskId;
 		synchronized(lock) {
 			op = runningOps.remove(taskId);
 			if (op == null) {
-				log.warn("op taskId:" + taskId + " not found to handle onOpExecutedSuccess() .. ignore!");
-				return;
+				// throw new IllegalArgumentException("running op not found for " + taskId);
+				log.error("running op not found for " + taskId + " .. ignore onOpExecutedSuccess");
 			}
 			this.doneOpsCount++;
 			if (keepDoneOps) {
@@ -201,37 +171,38 @@ public class BlobStorageOperationExecQueue {
 		}
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
-		perStoragesIOTimeCounter.incr(result);
-
+		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
+		
 		// TOADD update op stats per storage... for speed / counters 
-
+		
 		if (opHook != null) {
 			opHook.onOpExecutedSuccess(result, op);
 		}
 	}
 
-	protected void onOpExecutedError(PerBlobStoragesIOTimeResult result, int taskId) {
+	protected void onOpExecutedError(BlobStorageOperationResult result) {
 		BlobStorageOperation op;
+		val taskId = result.taskId;
 		synchronized(lock) {
 			op = runningOps.remove(taskId);
 			if (op == null) {
-				log.warn("op taskId:" + taskId + " not found to handle onOpExecutedError() .. ignore!");
-				return;
+				// throw new IllegalArgumentException("running op not found for " + taskId);
+				log.error("running op not found for " + taskId + " .. ignore onOpExecutedError");
 			}
-			errorOps.put(op.taskId, op);
+			errorOps.put(taskId, op);
 		}
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
-		perStoragesIOTimeCounter.incr(result);
-		perStoragesErrorIOTimeCounter.incr(result);
-
+		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
+		perStoragesErrorIOTimeCounter.incr(result.ioTimePerStorage);
+		
 		// TOADD update op stats per storage... for speed / counters 
-
+		
 		if (opHook != null) {
 			opHook.onOpExecutedError(result, op);
 		}
 	}
-	
+
 	protected void onOpUnexpectedError(Throwable ex, BlobStorageOperation op) {
 		synchronized(lock) {
 			runningOps.remove(op.taskId);

@@ -6,8 +6,8 @@ import javax.annotation.Nonnull;
 
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStoragePath;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
 
@@ -59,11 +59,11 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
     // ------------------------------------------------------------------------
 	
-    public ZipCopyFileStorageOperation(int taskId, //
+    public ZipCopyFileStorageOperation(long jobId, long taskId, //
     		@Nonnull BlobStoragePath destStoragePath,
     		@Nonnull BlobStorage srcStorage,
     		@Nonnull ImmutableList<SrcStorageZipEntry> srcEntries) {
-        super(taskId);
+        super(jobId, taskId);
         this.destStoragePath = Objects.requireNonNull(destStoragePath);
         this.srcStorage = srcStorage;
         this.srcEntries = Objects.requireNonNull(srcEntries);
@@ -91,8 +91,8 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
-		PerBlobStoragesIOTimeResult res = null;
+	public BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx) {
+		BlobStorageOperationResult res = null;
 		// TODO
 		ctx.logIncr_zipCopyFile(this, res , logPrefix -> log.info(logPrefix + "(" + destStoragePath + ", srcEntries.count:" + srcEntries.size() + ", totalEntriesFileSize:" + totalEntriesFileSize + ")"));
 		throw BlobStorageNotImpl.notImpl();

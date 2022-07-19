@@ -1,0 +1,179 @@
+package org.simplestorage4j.executor.impl;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Map;
+
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
+import org.simplestorage4j.api.util.LoggingCounter;
+import org.simplestorage4j.api.util.LoggingCounter.LoggingCounterParams;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorOpFinishedPollNextRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorOpsFinishedRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
+
+import lombok.val;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.http.Body;
+import retrofit2.http.PUT;
+
+/**
+ * Retrofit2 client corresponding to {@Link org.simplestorage4j.opsserver.rest.StorageOpsExecutorRestController}
+ */
+@Slf4j
+public class StorageJobOpsExecutorClient {
+
+	private String sessionId; // generated on client-side, at init
+	private String hostname;
+	private long startTime;
+	private Map<String,String> props;
+	
+	private StorageJobOpsExecutorRetrofit2Interface delegate;
+	
+	private final LoggingCounter loggingCounter_call = new LoggingCounter("executorClient call", new LoggingCounterParams(1, 0));
+	private final LoggingCounter loggingCounter_pingAlive = new LoggingCounter("executorClient pingAlive", new LoggingCounterParams(100, 600_000));
+	private final LoggingCounter loggingCounter_pollOp = new LoggingCounter("executorClient pollOp", new LoggingCounterParams(100, 600_000));
+	private final LoggingCounter loggingCounter_onOpsFinished = new LoggingCounter("executorClient onOpsFinished", new LoggingCounterParams(100, 600_000));
+	private final LoggingCounter loggingCounter_onOpFinishedPollNext = new LoggingCounter("executorClient onOpFinishedPollNext", new LoggingCounterParams(100, 600_000));
+	private final LoggingCounter loggingCounter_onOpsFinishedPollNexts = new LoggingCounter("executorClient onOpsFinishedPollNexts", new LoggingCounterParams(100, 600_000));
+	
+	// ------------------------------------------------------------------------
+	
+	public StorageJobOpsExecutorClient(String baseServerUrl, Map<String,String> props) {
+		try {
+			this.hostname = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException ex) {
+			log.error("should not occur: failed to get local hostname.. using default", ex);
+			this.hostname = "localhost?";
+		}
+		this.sessionId = hostname + ":" + System.currentTimeMillis();
+		this.startTime = System.currentTimeMillis();
+		this.props = props;
+		
+		// Retrofit2.
+		// TODO
+	}
+
+	// ------------------------------------------------------------------------
+	
+	private static interface StorageJobOpsExecutorRetrofit2Interface {
+		
+		public static final String BASE_PATH = "api/storage-ops/executor";
+		
+		@PUT(BASE_PATH + "/onExecutorStart")
+		public Call<Void> onExecutorStart(@Body ExecutorSessionStartRequestDTO req);
+		
+		@PUT(BASE_PATH + "/onExecutorStop")
+		public Call<Void> onExecutorStop(@Body ExecutorSessionStopRequestDTO req);
+	
+		@PUT(BASE_PATH + "/onExecutorPingAlive")
+		public Call<Void> onExecutorPingAlive(@Body ExecutorSessionPingAliveRequestDTO req);
+		
+		@PUT(BASE_PATH + "/poll-op")
+		public Call<ExecutorSessionPollOpResponseDTO> pollOp(@Body ExecutorSessionPollOpRequestDTO req);
+	
+		@PUT(BASE_PATH + "/on-ops-finished")
+		public Call<Void> onOpsFinished(@Body ExecutorOpsFinishedRequestDTO req);
+		
+		@PUT(BASE_PATH + "/on-op-finished-poll-next")
+		public Call<ExecutorSessionPollOpResponseDTO> onOpFinishedPollNext(@Body ExecutorOpFinishedPollNextRequestDTO req);
+
+		@PUT(BASE_PATH + "/on-ops-finished-poll-nexts")
+		public Call<ExecutorSessionPollOpResponseDTO> onOpsFinishedPollNext(@Body ExecutorOpsFinishedRequestDTO req);
+		
+	}
+
+	// ------------------------------------------------------------------------
+	
+	public void onExecutorStart() {
+		val req = new ExecutorSessionStartRequestDTO(sessionId, hostname, startTime, props);
+		execHttp(loggingCounter_call, "PUT", "onExecutorStart", "", //
+				delegate.onExecutorStart(req));
+	}
+	
+	public void onExecutorStop(String stopReason) {
+		val req = new ExecutorSessionStopRequestDTO(sessionId, stopReason);
+		execHttp(loggingCounter_call, "PUT", "onExecutorStop", "", //
+				delegate.onExecutorStop(req));
+	}
+
+	public void onExecutorPingAlive() {
+		val req = new ExecutorSessionPingAliveRequestDTO(sessionId);
+		execHttp(loggingCounter_pingAlive, "PUT", "onExecutorPingAlive", "", //
+				delegate.onExecutorPingAlive(req));
+	}
+	
+	public ExecutorSessionPollOpResponseDTO pollOp() {
+		val req = new ExecutorSessionPollOpRequestDTO(sessionId);
+		return execHttp(loggingCounter_pollOp, "PUT", "pollOp", "", //
+				delegate.pollOp(req));
+	}
+
+	public void onOpsFinished(List<BlobStorageOperationResult> opResults) {
+		val opResultDtos = BlobStorageOperationResult.toDtos(opResults);
+		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos);
+		execHttp(loggingCounter_onOpsFinished, "PUT", "onOpsFinished", "", //
+				delegate.onOpsFinished(req));
+	}
+	
+	public ExecutorSessionPollOpResponseDTO onOpFinishedPollNext(BlobStorageOperationResult opResult) {
+		val opResultDto = opResult.toDTO();
+		val req = new ExecutorOpFinishedPollNextRequestDTO(sessionId, opResultDto);
+		return execHttp(loggingCounter_onOpFinishedPollNext, "PUT", "onOpFinishedPollNext", "", //
+				delegate.onOpFinishedPollNext(req));
+	}
+
+	public ExecutorSessionPollOpResponseDTO onOpsFinishedPollNexts(List<BlobStorageOperationResult> opResults) {
+		val opResultDtos = BlobStorageOperationResult.toDtos(opResults);
+		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos);
+		return execHttp(loggingCounter_onOpsFinishedPollNexts, "PUT", "onOpsFinishedPollNext", "", //
+				delegate.onOpsFinishedPollNext(req));
+	}
+	
+	// ------------------------------------------------------------------------
+	
+	protected <T> T execHttp(
+			LoggingCounter loggingCounter,
+			String httpMethod, String httpRelativePath, String displayMessage,
+			Call<T> call) {
+		val startTime = System.currentTimeMillis();
+		Response<T> resp;
+		try {
+			resp = call.execute();
+		} catch (IOException ex) {
+			String errorMsg = "Failed to call http " + httpMethod + " " + httpRelativePath;
+			log.error(errorMsg, ex);
+			throw new RuntimeException(errorMsg, ex);
+		}
+		if (! resp.isSuccessful()) {
+			val errorCode = resp.code();
+			String errorBodyText;
+			try {
+				ResponseBody errorBody = resp.errorBody();
+				if (errorBody != null) {
+					errorBodyText = errorBody.string();
+				} else {
+					errorBodyText = "";
+				}
+			} catch (IOException e) {
+				errorBodyText = "(failed to get error body: " + e.getMessage() + ")";
+			}
+			throw new RuntimeException("Failed http " + httpMethod + " " + httpRelativePath + ": " + errorCode + " " + errorBodyText);
+		}
+		
+		val res = resp.body();
+
+		val millis = System.currentTimeMillis() - startTime;
+		loggingCounter.incr(millis, logPrefix -> log.info(logPrefix + " http " + httpMethod + " " + httpRelativePath));
+		return res;
+	}
+
+}

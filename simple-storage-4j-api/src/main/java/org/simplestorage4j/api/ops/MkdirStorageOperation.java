@@ -1,7 +1,7 @@
 package org.simplestorage4j.api.ops;
 
 import org.simplestorage4j.api.BlobStoragePath;
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 
@@ -18,9 +18,9 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 	
 	// ------------------------------------------------------------------------
 	
-    public MkdirStorageOperation(int taskId, //
+    public MkdirStorageOperation(long jobId, long taskId, //
     		BlobStoragePath storagePath) {
-        super(taskId);
+        super(jobId, taskId);
         this.storagePath = storagePath;
     }
     
@@ -38,13 +38,13 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
+	public BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		
 		storagePath.mkdirs();
 		
 		val millis = System.currentTimeMillis() - startTime;
-		val res = PerBlobStoragesIOTimeResult.ofMetadataCall(taskId, startTime, millis, // 
+		val res = BlobStorageOperationResult.ofMetadataCall(jobId, taskId, startTime, millis, // 
 				storagePath.blobStorage.id, 1, 0, 1);
 		ctx.logIncr_mkdir(this, res, logPrefix -> log.info(logPrefix + "(" + storagePath + ")"));
 		return res;

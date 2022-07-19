@@ -1,6 +1,6 @@
 package org.simplestorage4j.api.ops;
 
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 
 import lombok.Getter;
@@ -8,15 +8,17 @@ import lombok.Getter;
 @Getter
 public abstract class BlobStorageOperation {
 
-    public final int taskId;
+	public final long jobId; 
+    public final long taskId;
     
 //    TODO 
 //    private List<BlobStorageOperation> dependencies;
     
     // --------------------------------------------------------------------------------------------
     
-    public BlobStorageOperation(int taskId) {
-        this.taskId = taskId;
+    public BlobStorageOperation(long jobId, long taskId) {
+        this.jobId = jobId;
+    	this.taskId = taskId;
     }
 
     // --------------------------------------------------------------------------------------------
@@ -25,9 +27,6 @@ public abstract class BlobStorageOperation {
 
     public abstract PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost();
 
-    public abstract PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx);
-
-    // --------------------------------------------------------------------------------------------
-
+    public abstract BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx);
     
 }

@@ -47,22 +47,23 @@ public class BlobStorageOperationDtoResolver {
 		if (dto == null) {
 			return null;
 		}
+		val jobId = dto.jobId;
 		val taskId = dto.taskId;
 		if (dto instanceof CopyFileContentStorageOperationDTO) {
 			val src = (CopyFileContentStorageOperationDTO) dto;
 			val destStoragePath = toBlobStoragePath(src.destStoragePath);
     		byte[] srcContent = Objects.requireNonNull(src.srcContent); 
-			res = new CopyFileContentStorageOperation(taskId, destStoragePath, srcContent);
+			res = new CopyFileContentStorageOperation(jobId, taskId, destStoragePath, srcContent);
 		} else if (dto instanceof CopyFileStorageOperationDTO) {
 			val src = (CopyFileStorageOperationDTO) dto;
 			val destStoragePath = toBlobStoragePath(src.destStoragePath);
 			val srcStoragePath = toBlobStoragePath(src.srcStoragePath);
 			long srcFileLen = src.srcFileLen;
-			res = new CopyFileStorageOperation(taskId, destStoragePath, srcStoragePath, srcFileLen);
+			res = new CopyFileStorageOperation(jobId, taskId, destStoragePath, srcStoragePath, srcFileLen);
 		} else if (dto instanceof MkdirStorageOperationDTO) {
 			val src = (MkdirStorageOperationDTO) dto;
 			val storagePath = toBlobStoragePath(src.storagePath);
-			res = new MkdirStorageOperation(taskId, storagePath);
+			res = new MkdirStorageOperation(jobId, taskId, storagePath);
 		} else if (dto instanceof ZipCopyFileStorageOperationDTO) {
 			val src = (ZipCopyFileStorageOperationDTO) dto;
 			val destStoragePath = toBlobStoragePath(src.destStoragePath);
@@ -72,7 +73,7 @@ public class BlobStorageOperationDtoResolver {
 				val zipEntry = new SrcStorageZipEntry(srcEntry.destEntryPath, srcEntry.srcStoragePath, srcEntry.srcFileLen);
 				zipEntries.add(zipEntry);
 			}
-			res = new ZipCopyFileStorageOperation(taskId, destStoragePath, srcStorage, zipEntries.build());
+			res = new ZipCopyFileStorageOperation(jobId, taskId, destStoragePath, srcStorage, zipEntries.build());
 		} else {
 			throw new IllegalStateException("should not occur: unhandled dto class " + dto.getClass());
 		}

@@ -26,7 +26,7 @@ public class ParallelBlobStorageOperationsQueuePoller extends AbstractBlobStorag
 	// ------------------------------------------------------------------------
 	
 	public ParallelBlobStorageOperationsQueuePoller( //
-			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx, //
+			BlobStorageJobOperationsExecQueue queue, BlobStorageOperationExecContext execCtx, //
 			ExecutorService executorService,
 			int maxParallelSubmittedCount) {
 		super(queue, execCtx);
@@ -87,7 +87,7 @@ public class ParallelBlobStorageOperationsQueuePoller extends AbstractBlobStorag
 		try {
 			val opResult = op.execute(execCtx);
 			
-			queue.onOpExecuted(opResult, op);
+			queue.onOpExecuted(opResult);
 		} catch(Throwable ex) {
 			queue.onOpUnexpectedError(ex, op);
 		} finally {

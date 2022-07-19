@@ -16,7 +16,7 @@ public class JobQueueStatsDTO implements Serializable {
 	/** */
 	private static final long serialVersionUID = 1L;
 	
-	public int jobId;
+	public long jobId;
 
 	public boolean pollingActive; // else suspended
 	public long lastPollingActiveChangedTime;

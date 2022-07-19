@@ -123,10 +123,12 @@ public class BlobStorageOperationFormatter {
 	 */
 	public static class BlobStorageOperationReader {
 		
+		private final long jobId;
 		private final BufferedReader lineReader;
 		private final BlobStorageRepository blobStorages;
 
-		public BlobStorageOperationReader(BufferedReader lineReader, BlobStorageRepository blobStorages) {
+		public BlobStorageOperationReader(long jobId, BufferedReader lineReader, BlobStorageRepository blobStorages) {
+			this.jobId = jobId;
 			this.lineReader = lineReader;
 			this.blobStorages = blobStorages;
 		}
@@ -144,7 +146,7 @@ public class BlobStorageOperationFormatter {
 	        switch(taskType) {
 	        case 'd': {
 	        	val blobStoragePath = readBlobStoragePath(fieldReader);
-	            res = new MkdirStorageOperation(taskId, blobStoragePath);
+	            res = new MkdirStorageOperation(jobId, taskId, blobStoragePath);
 	        } break;
 
 	        case 'z': {
@@ -169,7 +171,7 @@ public class BlobStorageOperationFormatter {
 	        		val srcFileLen = entryFieldReader.readLong();
 	        		srcEntries.add(new SrcStorageZipEntry(destEntryPath, srcPath, srcFileLen));
 	        	}
-	            res = new ZipCopyFileStorageOperation(taskId, //
+	            res = new ZipCopyFileStorageOperation(jobId, taskId, //
 	            		destStoragePath, srcStorage, srcEntries.build());
 	        } break;
 	        
@@ -177,7 +179,7 @@ public class BlobStorageOperationFormatter {
 	        	val destStoragePath = readBlobStoragePath(fieldReader);
 	        	val srcStoragePath = readBlobStoragePath(fieldReader);
 	        	val srcFileLen = fieldReader.readLong();
-	            res = new CopyFileStorageOperation(taskId, destStoragePath, srcStoragePath, srcFileLen);
+	            res = new CopyFileStorageOperation(jobId, taskId, destStoragePath, srcStoragePath, srcFileLen);
 	        } break;
 	        
 	        default:

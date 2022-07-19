@@ -7,8 +7,8 @@ import javax.annotation.Nonnull;
 
 import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.iocost.counter.BlobStorageIOTimeCounter;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
@@ -26,11 +26,11 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
     
     // ------------------------------------------------------------------------
 	
-    public CopyFileStorageOperation(int taskId, //
+    public CopyFileStorageOperation(long jobId, long taskId, //
     		@Nonnull BlobStoragePath destStoragePath, // 
     		@Nonnull BlobStoragePath srcStoragePath, 
     		long srcFileLen) {
-		super(taskId);
+		super(jobId, taskId);
 		this.destStoragePath = Objects.requireNonNull(destStoragePath);
 		this.srcStoragePath = Objects.requireNonNull(srcStoragePath);
 		this.srcFileLen = srcFileLen;
@@ -51,7 +51,7 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-	public PerBlobStoragesIOTimeResult execute(BlobStorageOperationExecContext ctx) {
+	public BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		val inputIOCounter = new BlobStorageIOTimeCounter();
 		val outputIOCounter = new BlobStorageIOTimeCounter();
@@ -67,7 +67,7 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 		}
 		
 		val millis = System.currentTimeMillis();
-		return PerBlobStoragesIOTimeResult.of(taskId, startTime, millis,
+		return BlobStorageOperationResult.of(jobId, taskId, startTime, millis,
 				srcStoragePath.blobStorage.id, inputIOCounter.toImmutable(),
 				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
 				);

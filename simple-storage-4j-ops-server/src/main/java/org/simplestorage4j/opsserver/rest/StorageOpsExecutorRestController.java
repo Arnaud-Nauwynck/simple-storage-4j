@@ -1,9 +1,12 @@
 package org.simplestorage4j.opsserver.rest;
 
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorOpFinishedPollNextRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorOpsFinishedRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpsResponseDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opsserver.service.ExecutorSessionService;
@@ -56,17 +59,42 @@ public class StorageOpsExecutorRestController {
 	
 	@PutMapping("/poll-op")
 	public ExecutorSessionPollOpResponseDTO pollOp(@RequestBody ExecutorSessionPollOpRequestDTO req) {
-		log.debug("http PUT /poll-op " + req.sessionId);
-		executorSessionService.onExecutorPingAlive(req.sessionId);
-		val res = storageOpsService.pollOp(req);
+		val sessionId = req.sessionId;
+		log.debug("http PUT /poll-op " + sessionId);
+		executorSessionService.onExecutorPingAlive(sessionId);
+		val res = storageOpsService.pollOp(sessionId);
 		return res;
 	}
 
 	@PutMapping("/on-ops-finished")
 	public void onOpsFinished(@RequestBody ExecutorOpsFinishedRequestDTO req) {
-		log.debug("http PUT /on-ops-finished " + req.sessionId + " jobId:" + req.jobId + " taskResults:" + req.taskResults);
+		val sessionId = req.sessionId;
+		val opResults = BlobStorageOperationResult.fromDTOs(req.opResults);
+		log.debug("http PUT /on-ops-finished " + sessionId + " opResults:" + opResults);
 		executorSessionService.onExecutorPingAlive(req.sessionId);
-		storageOpsService.onOpsFinished(req);
+		storageOpsService.onOpsFinished(opResults);
 	}
-	
+
+	@PutMapping("/on-op-finished-poll-next")
+	public ExecutorSessionPollOpResponseDTO onOpFinishedPollNext(@RequestBody ExecutorOpFinishedPollNextRequestDTO req) {
+		val sessionId = req.sessionId;
+		val opResult = BlobStorageOperationResult.fromDTO(req.opResult);
+		log.debug("http PUT /on-op-finished-poll-next " + sessionId + " opResult:" + opResult);
+		executorSessionService.onExecutorPingAlive(sessionId);
+		storageOpsService.onOpFinished(opResult);
+		val res = storageOpsService.pollOp(sessionId);
+		return res;
+	}
+
+	@PutMapping("/on-ops-finished-poll-nexts")
+	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNext(@RequestBody ExecutorOpsFinishedRequestDTO req) {
+		val sessionId = req.sessionId;
+		val opResults = BlobStorageOperationResult.fromDTOs(req.opResults);
+		log.debug("http PUT /on-ops-finished-poll-nexts " + sessionId + " opResults:" + opResults);
+		executorSessionService.onExecutorPingAlive(sessionId);
+		storageOpsService.onOpsFinished(opResults);
+		val res = storageOpsService.pollOps(sessionId, opResults.size());
+		return res;
+	}
+
 }

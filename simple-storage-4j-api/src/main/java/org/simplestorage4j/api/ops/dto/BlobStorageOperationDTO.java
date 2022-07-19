@@ -37,7 +37,8 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// public abstract String getType();
 
-	public int taskId;
+	public long jobId;
+	public long taskId;
 
 	// ------------------------------------------------------------------------
 
@@ -50,9 +51,9 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 		public @Nonnull BlobStoragePathDTO destStoragePath;
 		public @Nonnull byte[] srcContent;
 
-		public CopyFileContentStorageOperationDTO(int taskId, //
+		public CopyFileContentStorageOperationDTO(long jobId, long taskId, //
 				BlobStoragePathDTO destStoragePath, byte[] srcContent) {
-			super(taskId);
+			super(jobId, taskId);
 			this.destStoragePath = destStoragePath;
 			this.srcContent = srcContent;
 		}
@@ -72,10 +73,10 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 		public @Nonnull BlobStoragePathDTO srcStoragePath;
 		public long srcFileLen;
 
-		public CopyFileStorageOperationDTO(int taskId, //
+		public CopyFileStorageOperationDTO(long jobId, long taskId, //
 				BlobStoragePathDTO destStoragePath, BlobStoragePathDTO srcStoragePath,
 				long srcFileLen) {
-			super(taskId);
+			super(jobId, taskId);
 			this.destStoragePath = destStoragePath;
 			this.srcStoragePath = srcStoragePath;
 			this.srcFileLen = srcFileLen;
@@ -92,9 +93,9 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 		public @Nonnull BlobStoragePathDTO storagePath;
 
-		public MkdirStorageOperationDTO(int taskId, //
+		public MkdirStorageOperationDTO(long jobId, long taskId, //
 				BlobStoragePathDTO storagePath) {
-			super(taskId);
+			super(jobId, taskId);
 			this.storagePath = storagePath;
 		}
 
@@ -112,10 +113,10 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	    public List<SrcStorageZipEntryDTO> srcEntries;
 	    // public long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
 
-	    public ZipCopyFileStorageOperationDTO(int taskId, //
+	    public ZipCopyFileStorageOperationDTO(long jobId, long taskId, //
 	    		BlobStoragePathDTO destStoragePath, String srcStorageId,
 	    		List<SrcStorageZipEntryDTO> srcEntries) {
-	    	super(taskId);
+	    	super(jobId, taskId);
 	    	this.destStoragePath = destStoragePath;
 	    	this.srcStorageId = srcStorageId;
 	    	this.srcEntries = srcEntries;

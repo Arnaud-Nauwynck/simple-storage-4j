@@ -14,7 +14,7 @@ public class AddOpsToJobQueueRequestDTO implements Serializable {
 	/** */
 	private static final long serialVersionUID = 1L;
 
-	public int jobId;
+	public long jobId;
 
 	public List<BlobStorageOperationDTO> ops;
 

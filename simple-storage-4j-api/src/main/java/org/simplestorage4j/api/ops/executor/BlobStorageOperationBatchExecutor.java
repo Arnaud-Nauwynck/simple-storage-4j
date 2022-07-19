@@ -2,7 +2,7 @@ package org.simplestorage4j.api.ops.executor;
 
 import java.util.List;
 
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
@@ -14,7 +14,7 @@ import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
  */
 public abstract class BlobStorageOperationBatchExecutor {
 
-	public abstract List<PerBlobStoragesIOTimeResult> executeBatch(
+	public abstract List<BlobStorageOperationResult> executeBatch(
 			BlobStorageOperationExecContext execCtx, List<BlobStorageOperation> ops);
 	
 }

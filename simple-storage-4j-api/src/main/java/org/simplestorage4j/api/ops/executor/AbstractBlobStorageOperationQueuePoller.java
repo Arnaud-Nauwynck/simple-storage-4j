@@ -6,14 +6,14 @@ import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
 public abstract class AbstractBlobStorageOperationQueuePoller {
 
-	protected final BlobStorageOperationExecQueue queue;
+	protected final BlobStorageJobOperationsExecQueue queue;
 	protected final BlobStorageOperationExecContext execCtx;
 	
 	private AtomicBoolean interruptRequested = new AtomicBoolean();
 	
 	// ------------------------------------------------------------------------
 	
-	public AbstractBlobStorageOperationQueuePoller(BlobStorageOperationExecQueue queue,
+	public AbstractBlobStorageOperationQueuePoller(BlobStorageJobOperationsExecQueue queue,
 			BlobStorageOperationExecContext execCtx) {
 		this.queue = queue;
 		this.execCtx = execCtx;

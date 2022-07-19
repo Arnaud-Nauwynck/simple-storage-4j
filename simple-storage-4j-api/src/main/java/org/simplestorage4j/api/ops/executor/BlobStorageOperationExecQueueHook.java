@@ -1,6 +1,6 @@
 package org.simplestorage4j.api.ops.executor;
 
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 
 /**
@@ -8,11 +8,11 @@ import org.simplestorage4j.api.ops.BlobStorageOperation;
  */
 public class BlobStorageOperationExecQueueHook {
 	
-	public void onOpExecutedSuccess(PerBlobStoragesIOTimeResult result, BlobStorageOperation op) {
+	public void onOpExecutedSuccess(BlobStorageOperationResult result, BlobStorageOperation op) {
 		// do nothing, cf override
 	}
 
-	public void onOpExecutedError(PerBlobStoragesIOTimeResult result, BlobStorageOperation op) {
+	public void onOpExecutedError(BlobStorageOperationResult result, BlobStorageOperation op) {
 		// do nothing, cf override
 	}
 

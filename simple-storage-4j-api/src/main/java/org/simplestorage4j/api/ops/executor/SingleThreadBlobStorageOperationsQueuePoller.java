@@ -13,7 +13,7 @@ public class SingleThreadBlobStorageOperationsQueuePoller extends AbstractBlobSt
 	// ------------------------------------------------------------------------
 	
 	public SingleThreadBlobStorageOperationsQueuePoller(
-			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx) {
+			BlobStorageJobOperationsExecQueue queue, BlobStorageOperationExecContext execCtx) {
 		super(queue, execCtx);
 	}
 	
@@ -37,7 +37,7 @@ public class SingleThreadBlobStorageOperationsQueuePoller extends AbstractBlobSt
 		try {
 			val opResult = op.execute(execCtx);
 			
-			queue.onOpExecuted(opResult, op);
+			queue.onOpExecuted(opResult);
 		} catch(Throwable ex) {
 			queue.onOpUnexpectedError(ex, op);
 		}

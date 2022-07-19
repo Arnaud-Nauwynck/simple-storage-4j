@@ -9,6 +9,10 @@
 	</parent>
 	
     <artifactId>simple-storage-4j-ops-executor</artifactId>
+
+	<properties>
+		<retrofit2.version>2.9.0</retrofit2.version>
+	</properties>
 	
     <dependencies>
         <!-- module dependencies -->	
@@ -27,6 +31,18 @@
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		
+		<dependency>
+		  <groupId>com.squareup.retrofit2</groupId>
+		  <artifactId>retrofit</artifactId>
+		  <version>${retrofit2.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>com.squareup.retrofit2</groupId>
+		  <artifactId>converter-jackson</artifactId>
+		  <version>${retrofit2.version}</version>
+		</dependency>
+
     </dependencies>
 
 </project>

@@ -1,6 +1,6 @@
 package org.simplestorage4j.api.ops;
 
-import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.util.LoggingCounter.LoggingCounterParams;
 import org.simplestorage4j.api.util.LoggingCounter.MsgPrefixLoggingCallback;
 
@@ -39,30 +39,30 @@ public class BlobStorageOperationExecContext {
 	
 	public void logIncr_mkdir(
 			MkdirStorageOperation op,
-			PerBlobStoragesIOTimeResult ioTimeResut,
+			BlobStorageOperationResult opResult,
 			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
-		loggingCounter_mkdir.logIncr(ioTimeResut, msgPrefixLoggingCallback);
+		loggingCounter_mkdir.logIncr(opResult, msgPrefixLoggingCallback);
 	}
 	
 	public void logIncr_copyFile(
 			CopyFileStorageOperation op,
-			PerBlobStoragesIOTimeResult ioTimeResut,
+			BlobStorageOperationResult opResult,
 			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
-		loggingCounter_copyFile.logIncr(ioTimeResut, msgPrefixLoggingCallback);
+		loggingCounter_copyFile.logIncr(opResult, msgPrefixLoggingCallback);
 	}
 
 	public void logIncr_copyFileContent(
 			CopyFileContentStorageOperation op,
-			PerBlobStoragesIOTimeResult ioTimeResut,
+			BlobStorageOperationResult opResult,
 			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
-		loggingCounter_copyFileContent.logIncr(ioTimeResut, msgPrefixLoggingCallback);
+		loggingCounter_copyFileContent.logIncr(opResult, msgPrefixLoggingCallback);
 	}
 
 	public void logIncr_zipCopyFile(
 			ZipCopyFileStorageOperation op,
-			PerBlobStoragesIOTimeResult ioTimeResut,
+			BlobStorageOperationResult opResult,
 			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
-		loggingCounter_zipCopyFile.logIncr(ioTimeResut, msgPrefixLoggingCallback);
+		loggingCounter_zipCopyFile.logIncr(opResult, msgPrefixLoggingCallback);
 	}
 
 }

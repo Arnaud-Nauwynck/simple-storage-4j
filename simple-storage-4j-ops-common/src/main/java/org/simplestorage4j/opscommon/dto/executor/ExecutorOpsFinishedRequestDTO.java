@@ -3,7 +3,7 @@ package org.simplestorage4j.opscommon.dto.executor;
 import java.io.Serializable;
 import java.util.List;
 
-import org.simplestorage4j.api.iocost.dto.PerBlobStoragesIOTimeResultDTO;
+import org.simplestorage4j.api.iocost.dto.BlobStorageOperationResultDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,8 +18,7 @@ public class ExecutorOpsFinishedRequestDTO implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public String sessionId;
-	public int jobId;
 	
-	public List<PerBlobStoragesIOTimeResultDTO> taskResults;
+	public List<BlobStorageOperationResultDTO> opResults;
 	
 }

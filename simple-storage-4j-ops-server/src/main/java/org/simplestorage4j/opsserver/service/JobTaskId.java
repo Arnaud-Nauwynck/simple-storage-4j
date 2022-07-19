@@ -4,6 +4,6 @@ import lombok.Value;
 
 @Value
 public class JobTaskId {
-	public final int jobId;
-	public final int taskId;
+	public final long jobId;
+	public final long taskId;
 }

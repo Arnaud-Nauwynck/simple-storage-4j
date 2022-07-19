@@ -33,7 +33,7 @@ public class BatchDelegateParallelBlobStorageOperationsQueuePoller extends Abstr
 	// ------------------------------------------------------------------------
 	
 	public BatchDelegateParallelBlobStorageOperationsQueuePoller(
-			BlobStorageOperationExecQueue queue, BlobStorageOperationExecContext execCtx, //
+			BlobStorageJobOperationsExecQueue queue, BlobStorageOperationExecContext execCtx, //
 			BlobStorageOperationBatchExecutor delegate, int maxTotalIOPerBatch, int maxOpPerBatch, //
 			ExecutorService executorService, int maxParallelSubmittedCount //
 			) {
@@ -121,13 +121,12 @@ public class BatchDelegateParallelBlobStorageOperationsQueuePoller extends Abstr
 			// *** the Biggy ***
 			val opResults = delegate.executeBatch(execCtx, opBatch);
 
-			val opByIds = new HashMap<Integer,BlobStorageOperation>();
+			val opByIds = new HashMap<Long,BlobStorageOperation>();
 			for(val op: opBatch) {
 				opByIds.put(op.taskId, op);
 			}
 			for(val opResult: opResults) {
-				val op = opByIds.get(opResult.taskId);
-				queue.onOpExecuted(opResult, op);
+				queue.onOpExecuted(opResult);
 			}
 		} catch(Throwable ex) {
 			for(val op: opBatch) {
