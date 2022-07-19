@@ -11,12 +11,9 @@ import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
-import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
 import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueueHook;
-import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseDTO;
-import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpsResponseDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
@@ -51,6 +48,9 @@ public class StorageJobOpsQueueService {
 	
 	@GuardedBy("lock")
 	private int jobIdGenerator = 0;
+
+	@GuardedBy("lock")
+	private int jobOpQueueRoundRobinIndex = 0;
 
 	@RequiredArgsConstructor
 	private static class JobOpQueueEntry {
@@ -168,24 +168,39 @@ public class StorageJobOpsQueueService {
 				queueStats);
 	}
 
-	public ExecutorSessionPollOpResponseDTO pollOp(String sessionId) {
+	public BlobStorageOperation pollOp(String sessionId) {
+		BlobStorageOperation res = null;
 		synchronized(lock) {
-			// TODO
-		}
-		BlobStorageOperationDTO opDto = null; // TODO
-		return new ExecutorSessionPollOpResponseDTO(opDto);
-	}
-
-	public ExecutorSessionPollOpsResponseDTO pollOps(String sessionId, int count) {
-		val opDtos = new ArrayList<BlobStorageOperationDTO>();
-		synchronized(lock) {
-			for(int i = 0; i < count; i++) {
-				// TODO
+			val len = jobOpQueues.size();
+			if (len == 0) {
+				return null;
+			}
+			for(int tryI = 0; tryI < len; tryI++) {
+				jobOpQueueRoundRobinIndex++;
+				if (jobOpQueueRoundRobinIndex >= len) {
+					jobOpQueueRoundRobinIndex = 0;
+				}
+				val entry = jobOpQueues.get(jobOpQueueRoundRobinIndex);
+				res = entry.queue.poll();
+				if (res != null) {
+					return res;
+				}
 			}
 		}
-		return new ExecutorSessionPollOpsResponseDTO(opDtos);
+		return res;
 	}
 
+	public List<BlobStorageOperation> pollOps(String sessionId, int count) {
+		val res = new ArrayList<BlobStorageOperation>();
+		for(int i = 0; i < count; i++) {
+			val op = pollOp(sessionId);
+			if (op == null) {
+				break;
+			}
+			res.add(op);
+		}
+		return res;
+	}
 
 	
 	public void onExecutorStop_reputPolledTasks(ExecutorSessionStopRequestDTO req,
@@ -227,6 +242,18 @@ public class StorageJobOpsQueueService {
 			}
 			jobEntry.queue.onOpExecuted(opResult);
 		}
+	}
+
+	public List<BlobStorageOperation> listJobQueueRemainOps(long jobId) {
+		List<BlobStorageOperation> res;
+		synchronized(lock) {
+			val jobEntry = jobOpQueueById.get(jobId);
+			if (jobEntry == null) {
+				return new ArrayList<>();
+			}
+			res = jobEntry.queue.listRemainOps();
+		}
+		return res;
 	}
 
 }

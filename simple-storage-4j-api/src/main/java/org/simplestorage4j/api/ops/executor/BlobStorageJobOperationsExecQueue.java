@@ -256,4 +256,10 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 
+	public List<BlobStorageOperation> listRemainOps() {
+		synchronized(lock) {
+			return new ArrayList<>(queuedOps);
+		}
+	}
+
 }

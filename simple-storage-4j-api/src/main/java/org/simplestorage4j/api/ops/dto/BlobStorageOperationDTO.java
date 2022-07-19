@@ -86,7 +86,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// ------------------------------------------------------------------------
 
-	public class MkdirStorageOperationDTO extends BlobStorageOperationDTO {
+	public static class MkdirStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
 		private static final long serialVersionUID = 1L;
@@ -103,7 +103,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// ------------------------------------------------------------------------
 
-	public class ZipCopyFileStorageOperationDTO extends BlobStorageOperationDTO {
+	public static class ZipCopyFileStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
 		private static final long serialVersionUID = 1L;

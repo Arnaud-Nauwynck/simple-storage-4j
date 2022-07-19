@@ -1,6 +1,7 @@
 package org.simplestorage4j.opsserver.rest;
 
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
+import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorOpFinishedPollNextRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorOpsFinishedRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
@@ -62,8 +63,9 @@ public class StorageOpsExecutorRestController {
 		val sessionId = req.sessionId;
 		log.debug("http PUT /poll-op " + sessionId);
 		executorSessionService.onExecutorPingAlive(sessionId);
-		val res = storageOpsService.pollOp(sessionId);
-		return res;
+		val op = storageOpsService.pollOp(sessionId);
+		val opDto = (op != null)? op.toDTO() : null;
+		return new ExecutorSessionPollOpResponseDTO(opDto);
 	}
 
 	@PutMapping("/on-ops-finished")
@@ -82,8 +84,9 @@ public class StorageOpsExecutorRestController {
 		log.debug("http PUT /on-op-finished-poll-next " + sessionId + " opResult:" + opResult);
 		executorSessionService.onExecutorPingAlive(sessionId);
 		storageOpsService.onOpFinished(opResult);
-		val res = storageOpsService.pollOp(sessionId);
-		return res;
+		val op = storageOpsService.pollOp(sessionId);
+		val opDto = (op != null)? op.toDTO() : null; 
+		return new ExecutorSessionPollOpResponseDTO(opDto);
 	}
 
 	@PutMapping("/on-ops-finished-poll-nexts")
@@ -93,8 +96,9 @@ public class StorageOpsExecutorRestController {
 		log.debug("http PUT /on-ops-finished-poll-nexts " + sessionId + " opResults:" + opResults);
 		executorSessionService.onExecutorPingAlive(sessionId);
 		storageOpsService.onOpsFinished(opResults);
-		val res = storageOpsService.pollOps(sessionId, opResults.size());
-		return res;
+		val ops = storageOpsService.pollOps(sessionId, opResults.size());
+		val opDtos = BlobStorageOperation.toDTOs(ops);
+		return new ExecutorSessionPollOpsResponseDTO(opDtos);
 	}
 
 }

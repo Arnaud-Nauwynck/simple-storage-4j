@@ -7,6 +7,8 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
+import org.simplestorage4j.api.ops.dto.BlobStoragePathDTO;
+
 /**
  * immutable wrapper for {BlobStorage, String path}
  */
@@ -23,6 +25,10 @@ public class BlobStoragePath {
 	}
 
 	// ------------------------------------------------------------------------
+	
+	public BlobStoragePathDTO toDTO() {
+		return new BlobStoragePathDTO(blobStorage.id.id, path);
+	}
 	
 	public BlobStoreFileInfo pathInfo() {
 		return blobStorage.pathInfo(path);

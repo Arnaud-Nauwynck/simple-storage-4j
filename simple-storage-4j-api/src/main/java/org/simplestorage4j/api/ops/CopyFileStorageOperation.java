@@ -10,6 +10,8 @@ import org.simplestorage4j.api.iocost.counter.BlobStorageIOTimeCounter;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOperationDTO;
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import lombok.val;
@@ -72,6 +74,11 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
 				);
 	}
+
+	@Override
+    public BlobStorageOperationDTO toDTO() {
+    	return new CopyFileStorageOperationDTO(jobId, taskId, destStoragePath.toDTO(), srcStoragePath.toDTO(), srcFileLen);
+    }
 
     @Override
     public String toString() {

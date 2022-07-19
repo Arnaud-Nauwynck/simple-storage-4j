@@ -4,6 +4,8 @@ import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MkdirStorageOperationDTO;
 
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,11 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 		ctx.logIncr_mkdir(this, res, logPrefix -> log.info(logPrefix + "(" + storagePath + ")"));
 		return res;
 	}
+
+	@Override
+    public BlobStorageOperationDTO toDTO() {
+    	return new MkdirStorageOperationDTO(jobId, taskId, storagePath.toDTO());
+    }
 
 	@Override
     public String toString() {

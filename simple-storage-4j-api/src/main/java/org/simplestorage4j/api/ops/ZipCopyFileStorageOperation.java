@@ -1,6 +1,7 @@
 package org.simplestorage4j.api.ops;
 
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -9,6 +10,9 @@ import org.simplestorage4j.api.BlobStoragePath;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.SrcStorageZipEntryDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
 
 import com.google.common.collect.ImmutableList;
@@ -46,6 +50,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 			this.srcFileLen = srcFileLen;
 		}
 		
+		public SrcStorageZipEntryDTO toDTO() {
+			return new SrcStorageZipEntryDTO(destEntryPath, srcStoragePath, srcFileLen);
+		}
+
 		@Override
 		public String toString() {
 			return "{zip-entry " // 
@@ -97,6 +105,12 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		ctx.logIncr_zipCopyFile(this, res , logPrefix -> log.info(logPrefix + "(" + destStoragePath + ", srcEntries.count:" + srcEntries.size() + ", totalEntriesFileSize:" + totalEntriesFileSize + ")"));
 		throw BlobStorageNotImpl.notImpl();
 	}
+
+	@Override
+    public BlobStorageOperationDTO toDTO() {
+    	val entryDtos = srcEntries.stream().map(x -> x.toDTO()).collect(Collectors.toList());
+		return new ZipCopyFileStorageOperationDTO(jobId, taskId, destStoragePath.toDTO(), srcStorage.id.id, entryDtos);
+    }
 
 	@Override
 	public String toString() {
