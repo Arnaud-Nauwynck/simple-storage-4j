@@ -46,9 +46,9 @@ public class StorageJobOpsQueueService {
 	
 	/** all job queues (even finished/errors), fast lookup by jobId */
 	@GuardedBy("lock")
-	private Map<Long,JobQueueEntry> jobQueueById = new HashMap<>(); 
+	private Map<Long,JobQueueEntry> jobQueueById = new HashMap<>();
 
-	/** currently active job queues: still containing queued operations, and status polling (not suspended) */ 
+	/** currently active job queues: still containing queued operations, and status polling (not suspended) */
 	@GuardedBy("lock")
 	private List<JobQueueEntry> activeJobQueues = new ArrayList<>();
 
@@ -169,8 +169,8 @@ public class StorageJobOpsQueueService {
 
 	protected JobQueueStatsDTO toJobQueueStats(JobQueueEntry src) {
 		val queueStats = src.queue.getQueueStatsDTO();
-		val elapsedSinceChanged = System.currentTimeMillis() - src.lastPollingActiveChangedTime; 
-		return new JobQueueStatsDTO(src.jobId, 
+		val elapsedSinceChanged = System.currentTimeMillis() - src.lastPollingActiveChangedTime;
+		return new JobQueueStatsDTO(src.jobId,
 				src.pollingActive,
 				src.lastPollingActiveChangedTime,
 				src.totalElapsedPollingActiveTime + ((src.pollingActive)? elapsedSinceChanged : 0),

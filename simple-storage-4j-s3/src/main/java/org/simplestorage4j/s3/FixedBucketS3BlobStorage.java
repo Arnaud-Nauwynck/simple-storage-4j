@@ -13,7 +13,7 @@ public class FixedBucketS3BlobStorage extends AbstractS3BlobStorage {
 
     // --------------------------------------------------------------------------------------------
 
-    public FixedBucketS3BlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName, 
+    public FixedBucketS3BlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName,
             S3Client s3Client, String bucketName) {
         super(id, groupId, displayName, s3Client);
         this.bucketName = bucketName;

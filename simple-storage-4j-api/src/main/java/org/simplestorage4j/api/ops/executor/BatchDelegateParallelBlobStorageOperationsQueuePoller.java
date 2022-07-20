@@ -16,7 +16,7 @@ import lombok.val;
  */
 public class BatchDelegateParallelBlobStorageOperationsQueuePoller extends AbstractBlobStorageOperationQueuePoller {
 
-	private final int maxTotalIOPerBatch;
+	private final long maxTotalIOPerBatch;
 	private final int maxOpPerBatch;
 	private final BlobStorageOperationBatchExecutor delegate;
 
@@ -34,7 +34,7 @@ public class BatchDelegateParallelBlobStorageOperationsQueuePoller extends Abstr
 	
 	public BatchDelegateParallelBlobStorageOperationsQueuePoller(
 			BlobStorageJobOperationsExecQueue queue, BlobStorageOperationExecContext execCtx, //
-			BlobStorageOperationBatchExecutor delegate, int maxTotalIOPerBatch, int maxOpPerBatch, //
+			BlobStorageOperationBatchExecutor delegate, long maxTotalIOPerBatch, int maxOpPerBatch, //
 			ExecutorService executorService, int maxParallelSubmittedCount //
 			) {
 		super(queue, execCtx);

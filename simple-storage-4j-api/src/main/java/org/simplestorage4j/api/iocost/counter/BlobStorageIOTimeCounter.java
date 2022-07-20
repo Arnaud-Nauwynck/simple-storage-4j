@@ -25,7 +25,7 @@ public class BlobStorageIOTimeCounter {
 	// ------------------------------------------------------------------------
 	
 	public synchronized void incr(
-			long elapsedTimeMillis, long ioReadLen, long ioWriteLen, 
+			long elapsedTimeMillis, long ioReadLen, long ioWriteLen,
 			int callCount, int metadataReadCount, int metadataWriteCount) {
 		this.elapsedTimeMillis += elapsedTimeMillis;
 		this.ioReadLen += ioReadLen;
@@ -36,17 +36,17 @@ public class BlobStorageIOTimeCounter {
 	}
 
 	public void incr(BlobStorageIOTimeResult opCount) {
-		incr(opCount.elapsedTimeMillis, opCount.ioReadLen, opCount.ioWriteLen, // 
+		incr(opCount.elapsedTimeMillis, opCount.ioReadLen, opCount.ioWriteLen, //
 			opCount.callCount, opCount.metadataReadCount, opCount.metadataWriteCount);
 	}
 
 	public synchronized BlobStorageIOTimeResultDTO toDTO() {
-		return new BlobStorageIOTimeResultDTO(elapsedTimeMillis, ioReadLen, ioWriteLen, // 
+		return new BlobStorageIOTimeResultDTO(elapsedTimeMillis, ioReadLen, ioWriteLen, //
 			callCount, metadataReadCount, metadataWriteCount);
 	}
 
 	public synchronized BlobStorageIOTimeResult toImmutable() {
-		return new BlobStorageIOTimeResult(elapsedTimeMillis, ioReadLen, ioWriteLen, // 
+		return new BlobStorageIOTimeResult(elapsedTimeMillis, ioReadLen, ioWriteLen, //
 				callCount, metadataReadCount, metadataWriteCount);
 	}
 

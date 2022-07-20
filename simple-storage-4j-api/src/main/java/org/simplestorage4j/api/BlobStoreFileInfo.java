@@ -6,7 +6,7 @@ public class BlobStoreFileInfo {
     public final boolean isDir;
     public final long fileLength;
     public final long lastModifTime;
-    
+
 
     public BlobStoreFileInfo(String path, boolean isDir, long fileLength, long lastModifTime) {
         if (path.endsWith("/")) {
@@ -20,7 +20,7 @@ public class BlobStoreFileInfo {
         this.fileLength = fileLength;
         this.lastModifTime = lastModifTime;
     }
-    
+
     public String childName() {
         int lastSep = path.lastIndexOf('/') ;
         if (lastSep == -1) {

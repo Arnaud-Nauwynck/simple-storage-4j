@@ -82,7 +82,7 @@ public class StorageJobOpsQueueRestController {
 	}
 
 	@GetMapping("/{jobId}/remain-ops")
-	public List<BlobStorageOperationDTO> listJobQueueRemainOps(@PathVariable("jobId") long jobId, 
+	public List<BlobStorageOperationDTO> listJobQueueRemainOps(@PathVariable("jobId") long jobId,
 			@RequestParam(name = "max", required = false, defaultValue = "200") int max
 			) {
 		val allRemainOps = jobOpsQueueService.listJobQueueRemainOps(jobId);

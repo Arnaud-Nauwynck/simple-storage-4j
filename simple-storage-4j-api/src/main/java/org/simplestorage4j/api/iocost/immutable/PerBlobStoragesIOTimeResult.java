@@ -34,8 +34,8 @@ public class PerBlobStoragesIOTimeResult {
 			BlobStorageId storageId, //
 			long elapsedMillis, long ioReadLen, long ioWriteLen, int callCount, int metadataReadCount, int metadataWriteCount
 			) {
-		return new PerBlobStoragesIOTimeResult(ImmutableMap.of(storageId, 
-					new BlobStorageIOTimeResult(elapsedMillis, ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount))); 
+		return new PerBlobStoragesIOTimeResult(ImmutableMap.of(storageId,
+					new BlobStorageIOTimeResult(elapsedMillis, ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount)));
 	}
 	
 	public static PerBlobStoragesIOTimeResult ofMetadataCall(

@@ -85,7 +85,7 @@ public class StorageOpsExecutorRestController {
 		executorSessionService.onExecutorPingAlive(sessionId);
 		storageOpsService.onOpFinished(opResult);
 		val op = storageOpsService.pollOp(sessionId);
-		val opDto = (op != null)? op.toDTO() : null; 
+		val opDto = (op != null)? op.toDTO() : null;
 		return new ExecutorSessionPollOpResponseDTO(opDto);
 	}
 

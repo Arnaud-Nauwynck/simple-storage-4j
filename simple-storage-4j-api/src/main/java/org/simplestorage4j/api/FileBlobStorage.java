@@ -23,7 +23,7 @@ public class FileBlobStorage extends BlobStorage {
 	// ------------------------------------------------------------------------
 	
 	public FileBlobStorage(
-			BlobStorageId id, BlobStorageGroupId groupId, String displayName, // 
+			BlobStorageId id, BlobStorageGroupId groupId, String displayName, //
 			File baseDir) {
 		super(id, groupId, displayName);
 		this.baseDir = baseDir;

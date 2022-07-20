@@ -43,7 +43,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
 
     // --------------------------------------------------------------------------------------------
 
-    /** create using 
+    /** create using
      * DataLakeFileSystemClient fsClient = datalakeServiceClient.getFileSystemClient(filesystem);
      * .. = fsClient.getDirectoryClient(subDirPath)
      */
@@ -61,7 +61,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
 
     @Override
     public BlobStoreFileInfo pathInfo(String relativePath) {
-        val child = dirClientOf(relativePath); // DirClient or FileClient both works 
+        val child = dirClientOf(relativePath); // DirClient or FileClient both works
         if (! child.exists()) {
             return null;
         }
@@ -106,17 +106,30 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     @Override
     public void mkdirs(String relativePath) {
         String[] pathElts = relativePath.split("/");
-        DataLakeDirectoryClient dirClient = baseDirClient;
-        if (! baseDirClient.exists()) {
-            log.error("baseDir not exists? " + baseDirClient.getDirectoryUrl());
-        }
-        for(val pathElt: pathElts) {
-            val childDirClient = dirClient.getSubdirectoryClient(pathElt);
-            if (! childDirClient.exists()) {
-                log.info("az dir.create " + childDirClient.getDirectoryUrl());
-                childDirClient.create();
+        val len = pathElts.length;
+        DataLakeDirectoryClient[] dirClients = new DataLakeDirectoryClient[len];
+        {
+            DataLakeDirectoryClient dirClient = baseDirClient;
+            for(int i = 0; i < len; i++) {
+                dirClient = dirClient.getSubdirectoryClient(pathElts[i]);
+                dirClients[i] = dirClient;
             }
-            dirClient = childDirClient;
+        }
+        val lastDir = dirClients[len-1];
+        if (! lastDir.exists()) {
+            try {
+                // heuristic: try to create last dir, hoping intermediate dirs already exist
+                log.info("az dir.create " + lastDir.getDirectoryUrl());
+                lastDir.create();
+            } catch(Exception ex) {
+                // Failed... slow path: check+create all intermediate dirs
+                for(val dirClient: dirClients) {
+                    if (! dirClient.exists()) {
+                        log.info("az dir.create " + dirClient.getDirectoryUrl());
+                        dirClient.create();
+                    }
+                }
+            }
         }
     }
 
@@ -147,9 +160,22 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     @Override
     public OutputStream openWrite(String relativeFilePath, boolean append) {
         val fileClient = fileClientOf(relativeFilePath);
+        boolean existed = fileClient.exists();
         if (! append) {
+            if (! existed) {
+                fileClient.create();
+            } else {
+                fileClient.create(true);
+            }
             return new AzFileExclusiveOutputStream(fileClient, 0);
         } else {
+            // TODO TOCHECK
+            if (! existed) {
+                fileClient.create();
+            } else {
+                // fileClient.create(false); // append ???
+            }
+            // fileClient.create(false);
             val props = fileClient.getProperties();
             val len = props.getFileSize();
             return new AzFileExclusiveOutputStream(fileClient, len);
@@ -174,9 +200,9 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     public void writeFile(String relativeFilePath, byte[] data) {
         long startTime = System.currentTimeMillis();
         val resolved = fileAndParentDirOf(relativeFilePath);
-        if (!resolved.parentDirClient.exists()) {
-            resolved.parentDirClient.create();
-        }
+//        if (!resolved.parentDirClient.exists()) {
+//            resolved.parentDirClient.create();
+//        }
         val input = new ByteArrayInputStream(data);
         try {
             resolved.fileClient.upload(input, data.length, true);
@@ -184,7 +210,9 @@ public class AdlsGen2BlobStorage extends BlobStorage {
             throw new RuntimeException("Failed to write StorageFile '" + relativeFilePath + "'", ex);
         }
         long millis = System.currentTimeMillis() - startTime;
-        logWrite("write to '" + relativeFilePath + "' length:" + data.length, millis);
+        if (millis > 10000) {
+            logWrite("write to '" + relativeFilePath + "' length:" + data.length, millis);
+        }
     }
 
     @Override
@@ -200,7 +228,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
             if (!resolved.fileClient.exists()) {
                 resolved.fileClient.create(); // ??
                 resolved.fileClient.upload(input, appendData.length, true);
-                fileLenRes = appendData.length; 
+                fileLenRes = appendData.length;
             } else {
                 resolved.fileClient.upload(input, appendData.length, false);
                 fileLenRes = resolved.fileClient.getProperties().getFileSize();
@@ -258,7 +286,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
         if (relativePath.startsWith("/")) {
             relativePath = relativePath.substring(1);
         }
-        return azBaseDirPath + "/" + relativePath; 
+        return azBaseDirPath + "/" + relativePath;
     }
 
     private DataLakeDirectoryClient dirClientOf(String relativePath) {
@@ -272,7 +300,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     }
 
     private PathProperties azQueryPathProperties(String relativePath) {
-        val child = dirClientOf(relativePath); // DirClient or FileClient both works 
+        val child = dirClientOf(relativePath); // DirClient or FileClient both works
         if (! child.exists()) {
             return null;
         }
@@ -290,7 +318,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
 
     private DataLakeFileClient fileClientOf(String relativePath) {
         String[] pathElts = relativePath.split("/");
-        val parentDir = chilDirClientUpTo(baseDirClient, pathElts, pathElts.length - 1);  
+        val parentDir = chilDirClientUpTo(baseDirClient, pathElts, pathElts.length - 1);
         return parentDir.getFileClient(pathElts[pathElts.length - 1]);
     }
 

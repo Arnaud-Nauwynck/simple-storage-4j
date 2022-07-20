@@ -118,7 +118,7 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
             try {
         		BlobStorageIOUtils.skipFully(in, position);
             } catch (IOException ex) {
-                throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex, 
+                throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex,
                         displayName, s3.bucketName, s3.key);
             }
         }
@@ -140,7 +140,7 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
         	try {
         		BlobStorageIOUtils.skipFully(in, position);
             } catch (IOException ex) {
-                throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex, 
+                throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex,
                         displayName, s3.bucketName, s3.key);
             }
         }
@@ -148,7 +148,7 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
         	val res = BlobStorageIOUtils.readFully(in, len);
         	return res;
         } catch (IOException ex) {
-            throw new WrappedS3ClientException("Failed read(" + ((position != 0)? "pos:" + position + ", ": "") + len + ") on S3 object " + s3, ex, 
+            throw new WrappedS3ClientException("Failed read(" + ((position != 0)? "pos:" + position + ", ": "") + len + ") on S3 object " + s3, ex,
                     displayName, s3.bucketName, s3.key);
         }
     }

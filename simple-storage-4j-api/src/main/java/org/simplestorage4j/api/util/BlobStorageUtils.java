@@ -18,7 +18,7 @@ public final class BlobStorageUtils {
 	}
 
 	public static <TDest,TSrc> List<TDest> mapIter(Iterable<TSrc> src, Function<TSrc,TDest> mapFunc) {
-		val res = new ArrayList<TDest>(); 
+		val res = new ArrayList<TDest>();
 		for(val x : src) {
 			res.add(mapFunc.apply(x));
 		}

@@ -8,7 +8,7 @@ import org.simplestorage4j.api.ops.BlobStorageOperationExecContext;
 
 /**
  * delegate execution of multiple independent {@link BlobStorageOperation}s
- * 
+ *
  * maybe remotly... typically called in spark to distribute computing
  *
  */

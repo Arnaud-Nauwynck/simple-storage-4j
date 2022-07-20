@@ -40,7 +40,7 @@ public abstract class BlobStorage {
 
 	// TODO use fileInfo()
 	public abstract long fileLen(String filePath);
-	    
+	
 	// TODO use fileInfo()
 	public abstract long lastModifiedTime(String filePath);
 

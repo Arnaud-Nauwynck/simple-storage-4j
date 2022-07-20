@@ -69,13 +69,13 @@ public class BlobStorageJobOperationsExecQueue {
 	@GuardedBy("lock")
 	private final Map<Long,BlobStorageOperationWarning> warningOps = new HashMap<>();
 	
-	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter(); 
+	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
 	
-	private final PerBlobStoragesPreEstimateIOCostCounter runningPreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter(); 
+	private final PerBlobStoragesPreEstimateIOCostCounter runningPreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
 	
-	private final PerBlobStoragesIOTimeCounter perStoragesIOTimeCounter = new PerBlobStoragesIOTimeCounter();  
+	private final PerBlobStoragesIOTimeCounter perStoragesIOTimeCounter = new PerBlobStoragesIOTimeCounter();
 	
-	private final PerBlobStoragesIOTimeCounter perStoragesErrorIOTimeCounter = new PerBlobStoragesIOTimeCounter();  
+	private final PerBlobStoragesIOTimeCounter perStoragesErrorIOTimeCounter = new PerBlobStoragesIOTimeCounter();
 	
 	private final BlobStorageOperationExecQueueHook opHook;
 	
@@ -88,9 +88,9 @@ public class BlobStorageJobOperationsExecQueue {
 	}
 	
 	public BlobStorageJobOperationsExecQueue(
-			long jobId, 
+			long jobId,
 			BlobStorageOperationExecQueueHook opHook,
-			boolean keepDoneOps, 
+			boolean keepDoneOps,
 			Collection<BlobStorageOperation> queuedOps) {
 		this.jobId = jobId;
 		this.opHook = opHook;
@@ -194,7 +194,7 @@ public class BlobStorageJobOperationsExecQueue {
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
 		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
 		
-		// TOADD update op stats per storage... for speed / counters 
+		// TOADD update op stats per storage... for speed / counters
 		
 		if (opHook != null) {
 			opHook.onOpExecutedSuccess(result, op);
@@ -223,7 +223,7 @@ public class BlobStorageJobOperationsExecQueue {
 		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
 		perStoragesErrorIOTimeCounter.incr(result.ioTimePerStorage);
 		
-		// TOADD update op stats per storage... for speed / counters 
+		// TOADD update op stats per storage... for speed / counters
 		
 		if (opHook != null) {
 			opHook.onOpExecutedError(result, op);
@@ -236,6 +236,7 @@ public class BlobStorageJobOperationsExecQueue {
 	protected void onOpUnexpectedError(Throwable ex, BlobStorageOperation op) {
 		boolean finished;
 		val taskId = op.taskId;
+		log.error("Failed " + op, ex);
 		synchronized(lock) {
 			runningOps.remove(taskId);
 			val errorOp = errorOps.computeIfAbsent(taskId, x -> new BlobStorageOperationError(op));

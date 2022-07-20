@@ -57,8 +57,8 @@ public class BlobStorageOperationResult {
 			long timeMillis, long ioReadLen, long ioWriteLen, int callCount, int metadataReadCount, int metadataWriteCount
 			) {
 		return new BlobStorageOperationResult(jobId, taskId, startTime, elapsedMillis, null, null, null, //
-				PerBlobStoragesIOTimeResult.of(storageId, 
-					new BlobStorageIOTimeResult(timeMillis, ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount))); 
+				PerBlobStoragesIOTimeResult.of(storageId,
+					new BlobStorageIOTimeResult(timeMillis, ioReadLen, ioWriteLen, callCount, metadataReadCount, metadataWriteCount)));
 	}
 	
 	public static BlobStorageOperationResult ofMetadataCall(

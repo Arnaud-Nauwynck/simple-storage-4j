@@ -21,7 +21,7 @@ public class BlobStoragePreEstimateIOCost {
 	
 	// ------------------------------------------------------------------------
 	
-	public BlobStoragePreEstimateIOCost(long ioReadLen, long ioWriteLen, // 
+	public BlobStoragePreEstimateIOCost(long ioReadLen, long ioWriteLen, //
 			int callCount, int metadataReadCount, int metadataWriteCount) {
 		this.ioReadLen = ioReadLen;
 		this.ioWriteLen = ioWriteLen;
@@ -33,16 +33,16 @@ public class BlobStoragePreEstimateIOCost {
 	public static BlobStoragePreEstimateIOCost sum(
 			BlobStoragePreEstimateIOCost left, BlobStoragePreEstimateIOCost right) {
 		return new BlobStoragePreEstimateIOCost(
-				left.ioReadLen + right.ioReadLen, 
-				left.ioWriteLen + right.ioWriteLen, // 
-				left.callCount + right.callCount, 
-				left.metadataReadCount + right.metadataReadCount, 
+				left.ioReadLen + right.ioReadLen,
+				left.ioWriteLen + right.ioWriteLen, //
+				left.callCount + right.callCount,
+				left.metadataReadCount + right.metadataReadCount,
 				left.metadataWriteCount + right.metadataWriteCount);
 	}
 	
-	public static BlobStoragePreEstimateIOCost of(long ioReadLen, long ioWriteLen, // 
+	public static BlobStoragePreEstimateIOCost of(long ioReadLen, long ioWriteLen, //
 			int callCount, int metadataReadCount, int metadataWriteCount) {
-		return new BlobStoragePreEstimateIOCost(ioReadLen, ioWriteLen, // 
+		return new BlobStoragePreEstimateIOCost(ioReadLen, ioWriteLen, //
 				callCount, metadataReadCount, metadataWriteCount);
 	}
 	
@@ -104,7 +104,7 @@ public class BlobStoragePreEstimateIOCost {
 				+ ((ioReadLen != 0)? "ioRead=" + ioReadLen : "") //
 				+ ((ioWriteLen != 0)? " ioWrite=" + ioWriteLen : "") //
 				+ ((callCount > 1)? " call=" + callCount : "") //
-				+ ((metadataReadCount != 0)? " metadataRead=" + metadataReadCount : "") // 
+				+ ((metadataReadCount != 0)? " metadataRead=" + metadataReadCount : "") //
 				+ ((metadataWriteCount != 0)? " metadataWrite=" + metadataWriteCount : "") //
 				+ "}";
 	}

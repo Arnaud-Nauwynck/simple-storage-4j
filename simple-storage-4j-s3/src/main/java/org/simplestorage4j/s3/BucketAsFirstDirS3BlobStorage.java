@@ -18,7 +18,7 @@ public class BucketAsFirstDirS3BlobStorage extends AbstractS3BlobStorage {
 
     // --------------------------------------------------------------------------------------------
 
-    public BucketAsFirstDirS3BlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName, 
+    public BucketAsFirstDirS3BlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName,
             S3Client s3Client,
             Function<String,String> dirToS3BucketName,
             Function<String,String> s3BucketNameToDirName) {
@@ -42,7 +42,7 @@ public class BucketAsFirstDirS3BlobStorage extends AbstractS3BlobStorage {
         }
         val dirName = path.substring(firstIdx, sep);
         val bucketName = dirToS3BucketName.apply(dirName);
-        val key = path.substring(sep+1, path.length());
+        val key = path.substring(sep + 1, path.length()); // should not start with "/" ??
         return new BucketAndKey(bucketName, key);
     }
 

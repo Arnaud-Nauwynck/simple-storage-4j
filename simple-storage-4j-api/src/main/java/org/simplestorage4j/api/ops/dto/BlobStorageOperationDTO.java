@@ -121,7 +121,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	    	this.srcStorageId = srcStorageId;
 	    	this.srcEntries = srcEntries;
 	    }
-	    
+	
 	}
 	
 	@AllArgsConstructor @NoArgsConstructor
@@ -136,8 +136,8 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 		@Override
 		public String toString() {
-			return "{zip-entry " // 
-					+ " destEntryPath:" + destEntryPath + "'" // 
+			return "{zip-entry " //
+					+ " destEntryPath:" + destEntryPath + "'" //
 					+ ", src: '" + srcStoragePath + "'"
 					+ " (len: " + srcFileLen + ")"
 					+ "}";

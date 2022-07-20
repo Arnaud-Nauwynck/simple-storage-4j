@@ -11,7 +11,7 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
+ *
  */
 @Slf4j
 public class MkdirStorageOperation extends BlobStorageOperation {
@@ -25,9 +25,9 @@ public class MkdirStorageOperation extends BlobStorageOperation {
         super(jobId, taskId);
         this.storagePath = storagePath;
     }
-    
+
     // ------------------------------------------------------------------------
-    
+
     @Override
     public String taskTypeName() {
         return "mkdir";
@@ -35,7 +35,7 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 
     @Override
 	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
-		return PerBlobStoragesPreEstimateIOCost.of(storagePath.blobStorage, 
+		return PerBlobStoragesPreEstimateIOCost.of(storagePath.blobStorage,
 				BlobStoragePreEstimateIOCost.ofMetadataCall(1, 0, 1));
 	}
 
@@ -46,7 +46,7 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 		storagePath.mkdirs();
 		
 		val millis = System.currentTimeMillis() - startTime;
-		val res = BlobStorageOperationResult.ofMetadataCall(jobId, taskId, startTime, millis, // 
+		val res = BlobStorageOperationResult.ofMetadataCall(jobId, taskId, startTime, millis, //
 				storagePath.blobStorage.id, 1, 0, 1);
 		ctx.logIncr_mkdir(this, res, logPrefix -> log.info(logPrefix + "(" + storagePath + ")"));
 		return res;
@@ -60,8 +60,8 @@ public class MkdirStorageOperation extends BlobStorageOperation {
 	@Override
     public String toString() {
         return "{mkdir " + taskId //
-        		+ storagePath // 
+        		+ " " + storagePath //
         		+ "}";
     }
-    
+
 }

@@ -5,7 +5,7 @@ public class WrappedS3ClientException extends RuntimeException {
     public final String s3ClientDisplayName;
     public final String s3BucketName;
     public final String s3Key;
-    
+
     public WrappedS3ClientException(String message, Throwable cause,
             String s3ClientDisplayName,
             String s3BucketName,
@@ -16,5 +16,5 @@ public class WrappedS3ClientException extends RuntimeException {
         this.s3BucketName = s3BucketName;
         this.s3Key = s3Key;
     }
-    
+
 }

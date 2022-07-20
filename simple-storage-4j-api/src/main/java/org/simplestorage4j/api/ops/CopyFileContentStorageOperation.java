@@ -18,19 +18,19 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
+ *
  */
 @Slf4j
 public class CopyFileContentStorageOperation extends BlobStorageOperation {
-    
+
 	public final @Nonnull BlobStoragePath destStoragePath;
 
     private final @Nonnull byte[] srcContent;
-    
+
     // ------------------------------------------------------------------------
 	
     public CopyFileContentStorageOperation(long jobId, long taskId, //
-    		@Nonnull BlobStoragePath destStoragePath, // 
+    		@Nonnull BlobStoragePath destStoragePath, //
     		@Nonnull byte[] srcContent) {
 		super(jobId, taskId);
 		this.destStoragePath = Objects.requireNonNull(destStoragePath);
@@ -76,10 +76,10 @@ public class CopyFileContentStorageOperation extends BlobStorageOperation {
 
     @Override
     public String toString() {
-        return "{copy-file-content " + taskId 
+        return "{copy-file-content " + taskId
         		+ " dest: " + destStoragePath
         		+ " srcLen: " + srcContent.length
         		+ "}";
     }
-    
+
 }

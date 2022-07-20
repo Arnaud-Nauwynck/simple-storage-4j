@@ -18,15 +18,15 @@
         <azure-storage-common.version>12.17.0</azure-storage-common.version>
         <!-- cf https://docs.microsoft.com/fr-FR/java/api/overview/azure/storage-file-datalake-readme?view=azure-java-stable -->
         <azure-storage-file-datalake.version>12.11.0</azure-storage-file-datalake.version>
-        <!-- 
+        <!--
         <azure-storage-file-datalake.version>12.11.0</azure-storage-file-datalake.version>
          -->
         <azure-storage-blob.version>12.18.0</azure-storage-blob.version>
-        
+
         <azure-core-http-okhttp.version>1.11.0</azure-core-http-okhttp.version>
-        
+
     </properties>
-    
+
 	<dependencyManagement>
 	   <dependencies>
 	        <!-- Azure dependencies -->
@@ -37,7 +37,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <dependency>
                 <groupId>com.azure</groupId>
                 <artifactId>azure-core</artifactId>
@@ -63,12 +63,12 @@
 	            <artifactId>azure-storage-blob</artifactId>
 	            <version>${azure-storage-blob.version}</version>
 	        </dependency>
-            <!-- 
+            <!--
             <dependency>
 				<groupId>com.azure</groupId>
 				<artifactId>azure-core-http-okhttp</artifactId>
                 <version>${azure-core-http-okhttp.version}</version>
-            </dependency>    
+            </dependency>
              -->
 	   </dependencies>
 	</dependencyManagement>
@@ -94,7 +94,7 @@
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-file-datalake</artifactId>
         </dependency>
-		  
+		
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-http-okhttp</artifactId>

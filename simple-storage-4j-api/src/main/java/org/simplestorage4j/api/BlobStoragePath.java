@@ -45,7 +45,7 @@ public class BlobStoragePath {
 	public long fileLen() {
 		return blobStorage.fileLen(path);
 	}
-	    
+	
 	public long lastModifiedTime() {
 		return blobStorage.lastModifiedTime(path);
 	}

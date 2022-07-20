@@ -40,7 +40,7 @@ public class ExecutorSessionService {
 
 	public void onExecutorStart(ExecutorSessionStartRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
-		val entry = new ExecutorSessionEntry(sessionId, req.host, req.startTime, req.props); 
+		val entry = new ExecutorSessionEntry(sessionId, req.host, req.startTime, req.props);
 		synchronized(lock) {
 			val found = sessions.get(sessionId);
 			if (found != null) {

@@ -95,7 +95,7 @@ public class AzureStorageFactoryUtils {
     }
 
     public static HttpClient azureHttpClient_netty(ProxyOptions proxyOptions, boolean wrapVerboseHttpCli) {
-        // did not work ... bug in azure-core-http-netty > 1.0.0   ... but incompatible jar with 1.0.0 and .. 
+        // did not work ... bug in azure-core-http-netty > 1.0.0   ... but incompatible jar with 1.0.0 and ..
         val httpClientBuilder = new NettyAsyncHttpClientBuilder();
 
         // httpClientBuilder.connectionTimeout(Duration.ofMinutes(1));

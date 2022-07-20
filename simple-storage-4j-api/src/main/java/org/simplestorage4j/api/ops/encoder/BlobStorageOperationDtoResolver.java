@@ -52,7 +52,7 @@ public class BlobStorageOperationDtoResolver {
 		if (dto instanceof CopyFileContentStorageOperationDTO) {
 			val src = (CopyFileContentStorageOperationDTO) dto;
 			val destStoragePath = toBlobStoragePath(src.destStoragePath);
-    		byte[] srcContent = Objects.requireNonNull(src.srcContent); 
+    		byte[] srcContent = Objects.requireNonNull(src.srcContent);
 			res = new CopyFileContentStorageOperation(jobId, taskId, destStoragePath, srcContent);
 		} else if (dto instanceof CopyFileStorageOperationDTO) {
 			val src = (CopyFileStorageOperationDTO) dto;

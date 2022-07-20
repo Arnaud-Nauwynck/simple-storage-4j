@@ -118,7 +118,7 @@ public class BlobStoragePreEstimateIOCostCounter {
 				+ ((ioReadLen != 0)? "ioRead=" + ioReadLen : "") //
 				+ ((ioWriteLen != 0)? " ioWrite=" + ioWriteLen : "") //
 				+ ((callCount > 1)? " call=" + callCount : "") //
-				+ ((metadataReadCount != 0)? " metadataRead=" + metadataReadCount : "") // 
+				+ ((metadataReadCount != 0)? " metadataRead=" + metadataReadCount : "") //
 				+ ((metadataWriteCount != 0)? " metadataWrite=" + metadataWriteCount : "") //
 				+ "}";
 	}

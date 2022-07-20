@@ -14,7 +14,7 @@ public class BlobStorageOperationsIOLoggingCounter {
 	private final LoggingCounter loggingCounter;
 
 	@Getter
-	private final PerBlobStoragesIOTimeCounter ioCounter = new PerBlobStoragesIOTimeCounter(); 
+	private final PerBlobStoragesIOTimeCounter ioCounter = new PerBlobStoragesIOTimeCounter();
 	
 	public BlobStorageOperationsIOLoggingCounter(String logDisplayMsg, LoggingCounterParams logParams) {
 		this.loggingCounter = new LoggingCounter(logDisplayMsg, logParams);

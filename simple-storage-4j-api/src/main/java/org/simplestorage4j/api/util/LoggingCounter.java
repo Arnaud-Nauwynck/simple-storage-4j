@@ -12,17 +12,17 @@ public class LoggingCounter {
 	public static class LoggingCounterParams {
 	
 		@Getter @Setter
-		private int logFreq = 1000;
+		private int logFreq = 10_000;
 	
 		@Getter @Setter
-		private int logMaxDelayMillis = 30 * 1000;
+		private int logMaxDelayMillis = 60 * 1000;
 	
 	}
 	
 	@FunctionalInterface
 	public static interface MsgPrefixLoggingCallback {
-//		public void logMessage(int count, long millis, // 
-//				long elapsedMillisSinceLastLog, int countSinceLastLog, long sumMillisSinceLastLog, // 
+//		public void logMessage(int count, long millis, //
+//				long elapsedMillisSinceLastLog, int countSinceLastLog, long sumMillisSinceLastLog, //
 //				String displayName);
 		public void logWithMessagePrefix(String msgPrefix);
 	}
@@ -30,10 +30,10 @@ public class LoggingCounter {
 	private final String displayName;
 	
 	@Getter @Setter
-	private int logFreq = 1000;
+	private int logFreq = 10_000;
 
 	@Getter @Setter
-	private int logMaxDelayMillis = 30 * 1000;
+	private int logMaxDelayMillis = 60 * 1000;
 
 	@Getter
 	private int count;
@@ -99,7 +99,7 @@ public class LoggingCounter {
 			
 			this.countSinceLastLog = 0;
  			this.sumMillisSinceLastLog = 0;
- 			this.lastLogTimeMillis = now; 
+ 			this.lastLogTimeMillis = now;
 		}
 	}
 
@@ -111,15 +111,15 @@ public class LoggingCounter {
 			val remainMillis = millis - 1000 * seconds;
 			String res = "";
 			if (seconds <= 2 && remainMillis > 50) {
-				res = remainMillis + "ms"; 
+				res = remainMillis + "ms";
 			}// else neglectable millis
 			val minutes = seconds / 60;
-			val remainSeconds = seconds - minutes * 60; 
+			val remainSeconds = seconds - minutes * 60;
 			if (minutes <= 2 && remainSeconds > 1) {
 				res = remainSeconds + "s" + res;
 			}// else neglectable seconds
 			if (minutes != 0) {
-				res = minutes + "mn" + res; 
+				res = minutes + "mn" + res;
 			}
 			return res;
 		}
