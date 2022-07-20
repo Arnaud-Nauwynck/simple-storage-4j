@@ -1,7 +1,6 @@
 package org.simplestorage4j.api.ops;
 
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -14,6 +13,7 @@ import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.SrcStorageZipEntryDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 import org.simplestorage4j.api.util.BlobStorageNotImpl;
+import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
 
@@ -108,7 +108,7 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
 	@Override
     public BlobStorageOperationDTO toDTO() {
-    	val entryDtos = srcEntries.stream().map(x -> x.toDTO()).collect(Collectors.toList());
+    	val entryDtos = BlobStorageUtils.map(srcEntries, x -> x.toDTO());
 		return new ZipCopyFileStorageOperationDTO(jobId, taskId, destStoragePath.toDTO(), srcStorage.id.id, entryDtos);
     }
 

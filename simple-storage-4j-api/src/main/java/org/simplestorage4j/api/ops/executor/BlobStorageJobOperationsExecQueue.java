@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -30,8 +31,10 @@ public class BlobStorageJobOperationsExecQueue {
 	private final long jobId;
 
 	private final boolean keepDoneOps;
-	
+		
 	private final Object lock = new Object();
+	
+	private AtomicLong taskIdGenerator = new AtomicLong();
 	
 	/**
 	 * operation ready to be executed
@@ -61,8 +64,11 @@ public class BlobStorageJobOperationsExecQueue {
 	 * operations that failed, and may be retryed later if possible
 	 */
 	@GuardedBy("lock")
-	private final Map<Long,BlobStorageOperation> errorOps = new HashMap<>();
+	private final Map<Long,BlobStorageOperationError> errorOps = new HashMap<>();
 
+	@GuardedBy("lock")
+	private final Map<Long,BlobStorageOperationWarning> warningOps = new HashMap<>();
+	
 	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter(); 
 	
 	private final PerBlobStoragesPreEstimateIOCostCounter runningPreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter(); 
@@ -72,6 +78,8 @@ public class BlobStorageJobOperationsExecQueue {
 	private final PerBlobStoragesIOTimeCounter perStoragesErrorIOTimeCounter = new PerBlobStoragesIOTimeCounter();  
 	
 	private final BlobStorageOperationExecQueueHook opHook;
+	
+
 	
 	// ------------------------------------------------------------------------
 	
@@ -99,6 +107,14 @@ public class BlobStorageJobOperationsExecQueue {
 	
 	// ------------------------------------------------------------------------
 	
+	public long newTaskId() {
+		return taskIdGenerator.incrementAndGet();
+	}
+
+	public long newTaskIdsRange(int len) {
+		return taskIdGenerator.addAndGet(len);
+	}
+
 	public void addOp(BlobStorageOperation op) {
 		synchronized(lock) {
 			this.queuedOps.add(op);
@@ -158,6 +174,7 @@ public class BlobStorageJobOperationsExecQueue {
 	protected void onOpExecutedSuccess(BlobStorageOperationResult result) {
 		BlobStorageOperation op;
 		val taskId = result.taskId;
+		boolean finished;
 		synchronized(lock) {
 			op = runningOps.remove(taskId);
 			if (op == null) {
@@ -168,6 +185,10 @@ public class BlobStorageJobOperationsExecQueue {
 			if (keepDoneOps) {
 				doneOps.add(op);
 			}
+			if (result.warnings != null && !result.warnings.isEmpty()) {
+				warningOps.put(taskId, new BlobStorageOperationWarning(op, result.warnings));
+			}
+			finished = queuedOps.isEmpty() && runningOps.isEmpty();
 		}
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
@@ -177,19 +198,25 @@ public class BlobStorageJobOperationsExecQueue {
 		
 		if (opHook != null) {
 			opHook.onOpExecutedSuccess(result, op);
+			if (finished) {
+				opHook.onFinished();
+			}
 		}
 	}
 
 	protected void onOpExecutedError(BlobStorageOperationResult result) {
 		BlobStorageOperation op;
 		val taskId = result.taskId;
+		boolean finished;
 		synchronized(lock) {
 			op = runningOps.remove(taskId);
 			if (op == null) {
 				// throw new IllegalArgumentException("running op not found for " + taskId);
 				log.error("running op not found for " + taskId + " .. ignore onOpExecutedError");
 			}
-			errorOps.put(taskId, op);
+			val errorOp = errorOps.computeIfAbsent(taskId, x -> new BlobStorageOperationError(op));
+			errorOp.addError(result);
+			finished = queuedOps.isEmpty() && runningOps.isEmpty();
 		}
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
@@ -200,18 +227,28 @@ public class BlobStorageJobOperationsExecQueue {
 		
 		if (opHook != null) {
 			opHook.onOpExecutedError(result, op);
+			if (finished) {
+				opHook.onFinished();
+			}
 		}
 	}
 
 	protected void onOpUnexpectedError(Throwable ex, BlobStorageOperation op) {
+		boolean finished;
+		val taskId = op.taskId;
 		synchronized(lock) {
-			runningOps.remove(op.taskId);
-			errorOps.put(op.taskId, op);
+			runningOps.remove(taskId);
+			val errorOp = errorOps.computeIfAbsent(taskId, x -> new BlobStorageOperationError(op));
+			errorOp.unexpectedError = ex;
+			finished = queuedOps.isEmpty() && runningOps.isEmpty();
 		}
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
 		if (opHook != null) {
 			opHook.onOpUnexpectedError(ex, op);
+			if (finished) {
+				opHook.onFinished();
+			}
 		}
 	}
 
@@ -259,6 +296,18 @@ public class BlobStorageJobOperationsExecQueue {
 	public List<BlobStorageOperation> listRemainOps() {
 		synchronized(lock) {
 			return new ArrayList<>(queuedOps);
+		}
+	}
+
+	public List<BlobStorageOperationError> listOpErrors() {
+		synchronized(lock) {
+			return new ArrayList<>(errorOps.values());
+		}
+	}
+
+	public List<BlobStorageOperationWarning> listOpWarnings() {
+		synchronized(lock) {
+			return new ArrayList<>(warningOps.values());
 		}
 	}
 

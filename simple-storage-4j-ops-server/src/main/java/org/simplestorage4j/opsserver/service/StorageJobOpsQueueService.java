@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -13,7 +12,10 @@ import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
 import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue;
+import org.simplestorage4j.api.ops.executor.BlobStorageOperationError;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueueHook;
+import org.simplestorage4j.api.ops.executor.BlobStorageOperationWarning;
+import org.simplestorage4j.api.util.BlobStorageUtils;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
@@ -40,26 +42,27 @@ public class StorageJobOpsQueueService {
 	private final Object lock = new Object();
 	
 	@GuardedBy("lock")
-	private List<JobOpQueueEntry> jobOpQueues = new ArrayList<>();
-
-	// redundant with jobOpQueues, for fast lookup by jobId
-	@GuardedBy("lock")
-	private Map<Long,JobOpQueueEntry> jobOpQueueById = new HashMap<>(); 
-	
-	@GuardedBy("lock")
 	private int jobIdGenerator = 0;
+	
+	/** all job queues (even finished/errors), fast lookup by jobId */
+	@GuardedBy("lock")
+	private Map<Long,JobQueueEntry> jobQueueById = new HashMap<>(); 
+
+	/** currently active job queues: still containing queued operations, and status polling (not suspended) */ 
+	@GuardedBy("lock")
+	private List<JobQueueEntry> activeJobQueues = new ArrayList<>();
 
 	@GuardedBy("lock")
-	private int jobOpQueueRoundRobinIndex = 0;
+	private int jobQueueRoundRobinIndex = 0;
 
 	@RequiredArgsConstructor
-	private static class JobOpQueueEntry {
+	private static class JobQueueEntry {
 		public final long jobId;
 		public final long createTime;
 		public final String displayMessage;
 		public final Map<String,String> props;
 		
-		public final BlobStorageJobOperationsExecQueue queue;
+		final BlobStorageJobOperationsExecQueue queue;
 		
 		boolean pollingActive; // else suspended
 		long lastPollingActiveChangedTime;
@@ -80,7 +83,8 @@ public class StorageJobOpsQueueService {
 
 		List<BlobStorageOperation> ops = (req.ops != null)? dtoMapper.dtosToOps(req.ops) : new ArrayList<>();
 		val jobId = newJobId();
-		val queue = new BlobStorageJobOperationsExecQueue(jobId, opHook, false, ops);
+		boolean keepDoneOps = false;
+		val queue = new BlobStorageJobOperationsExecQueue(jobId, opHook, keepDoneOps, ops);
 		addJobQueue(jobId, req.displayMessage, req.props, queue);
 		return new AddJobOpsQueueResponseDTO(jobId);
 	}
@@ -92,37 +96,37 @@ public class StorageJobOpsQueueService {
 			BlobStorageJobOperationsExecQueue queue) {
 		val startTime = System.currentTimeMillis();
 		synchronized(lock) {
-			val entry = new JobOpQueueEntry(jobId, startTime, displayMessage, props, queue);
+			val entry = new JobQueueEntry(jobId, startTime, displayMessage, props, queue);
 			entry.pollingActive = true;
 			entry.lastPollingActiveChangedTime = System.currentTimeMillis();
 			
-			jobOpQueues.add(entry);
-			jobOpQueueById.put(jobId, entry);
+			activeJobQueues.add(entry);
+			jobQueueById.put(jobId, entry);
 		}
 	}
 
 	public void deleteJobQueue(long jobId) {
 		synchronized(lock) {
-			val entry = jobOpQueueById.remove(jobId);
+			val entry = jobQueueById.remove(jobId);
 			if (entry == null) {
 				log.error("jobId: " + jobId + " not found .. nothing to remove");
 				return;
 			}
-			jobOpQueues.remove(entry);
+			activeJobQueues.remove(entry);
 		}
 	}
 	
 	public void addOpsToJobQueue(AddOpsToJobQueueRequestDTO req) {
 		val ops = dtoMapper.dtosToOps(req.ops);
 		synchronized(lock) {
-			val entry = jobOpQueueById.get(req.jobId);
+			val entry = jobQueueById.get(req.jobId);
 			entry.queue.addOps(ops);
 		}
 	}
 	
 	public JobQueueInfoDTO getJobQueueInfo(long jobId) {
 		synchronized(lock) {
-			val entry = jobOpQueueById.get(jobId);
+			val entry = jobQueueById.get(jobId);
 			if (entry == null) {
 				return null;
 			}
@@ -132,18 +136,18 @@ public class StorageJobOpsQueueService {
 
 	public List<JobQueueInfoDTO> getJobQueueInfos() {
 		synchronized(lock) {
-			return jobOpQueues.stream().map(x -> toJobQueueInfoDTO(x)).collect(Collectors.toList());
+			return BlobStorageUtils.map(activeJobQueues, x -> toJobQueueInfoDTO(x));
 		}
 	}
 
-	protected JobQueueInfoDTO toJobQueueInfoDTO(JobOpQueueEntry src) {
+	protected JobQueueInfoDTO toJobQueueInfoDTO(JobQueueEntry src) {
 		return new JobQueueInfoDTO(src.jobId,
 				src.createTime, src.displayMessage, src.props);
 	}
 
 	public JobQueueStatsDTO getJobQueueStats(long jobId) {
 		synchronized(lock) {
-			val entry = jobOpQueueById.get(jobId);
+			val entry = jobQueueById.get(jobId);
 			if (entry == null) {
 				return null;
 			}
@@ -151,13 +155,19 @@ public class StorageJobOpsQueueService {
 		}
 	}
 	
-	public List<JobQueueStatsDTO> getJobQueuesStats() {
+	public List<JobQueueStatsDTO> getActiveJobQueuesStats() {
 		synchronized(lock) {
-			return jobOpQueues.stream().map(x -> toJobQueueStats(x)).collect(Collectors.toList());
+			return BlobStorageUtils.map(activeJobQueues, x -> toJobQueueStats(x));
 		}
 	}
-	
-	protected JobQueueStatsDTO toJobQueueStats(JobOpQueueEntry src) {
+
+	public List<JobQueueStatsDTO> getAllJobQueuesStats() {
+		synchronized(lock) {
+			return BlobStorageUtils.map(jobQueueById.values(), x -> toJobQueueStats(x));
+		}
+	}
+
+	protected JobQueueStatsDTO toJobQueueStats(JobQueueEntry src) {
 		val queueStats = src.queue.getQueueStatsDTO();
 		val elapsedSinceChanged = System.currentTimeMillis() - src.lastPollingActiveChangedTime; 
 		return new JobQueueStatsDTO(src.jobId, 
@@ -171,16 +181,16 @@ public class StorageJobOpsQueueService {
 	public BlobStorageOperation pollOp(String sessionId) {
 		BlobStorageOperation res = null;
 		synchronized(lock) {
-			val len = jobOpQueues.size();
+			val len = activeJobQueues.size();
 			if (len == 0) {
 				return null;
 			}
 			for(int tryI = 0; tryI < len; tryI++) {
-				jobOpQueueRoundRobinIndex++;
-				if (jobOpQueueRoundRobinIndex >= len) {
-					jobOpQueueRoundRobinIndex = 0;
+				jobQueueRoundRobinIndex++;
+				if (jobQueueRoundRobinIndex >= len) {
+					jobQueueRoundRobinIndex = 0;
 				}
-				val entry = jobOpQueues.get(jobOpQueueRoundRobinIndex);
+				val entry = activeJobQueues.get(jobQueueRoundRobinIndex);
 				res = entry.queue.poll();
 				if (res != null) {
 					return res;
@@ -204,11 +214,11 @@ public class StorageJobOpsQueueService {
 
 	
 	public void onExecutorStop_reputPolledTasks(ExecutorSessionStopRequestDTO req,
-			List<PolledJobTaskEntry> polledJobTasks) {
+			List<PolledBlobStorageOperationEntry> polledJobTasks) {
 		synchronized(lock) {
 			for(val polled: polledJobTasks) {
 				val jobId = polled.jobId;
-				val jobOpQueueEntry = jobOpQueueById.get(jobId);
+				val jobOpQueueEntry = jobQueueById.get(jobId);
 				if (jobOpQueueEntry == null) {
 					log.warn("jobId " + jobId + " not found to reput polled task? ..ignore");
 					continue;
@@ -222,7 +232,7 @@ public class StorageJobOpsQueueService {
 		synchronized(lock) {
 			for(val opResult: opResults) {
 				val jobId = opResult.jobId;
-				val jobEntry = jobOpQueueById.get(jobId);
+				val jobEntry = jobQueueById.get(jobId);
 				if (jobEntry == null) {
 					log.warn("jobId " + jobId + " not found to handle finished ops? ..ignore");
 					continue;
@@ -235,7 +245,7 @@ public class StorageJobOpsQueueService {
 	public void onOpFinished(BlobStorageOperationResult opResult) {
 		synchronized(lock) {
 			val jobId = opResult.jobId;
-			val jobEntry = jobOpQueueById.get(jobId);
+			val jobEntry = jobQueueById.get(jobId);
 			if (jobEntry == null) {
 				log.warn("jobId " + jobId + " not found to handle finished ops? ..ignore");
 				return;
@@ -247,11 +257,57 @@ public class StorageJobOpsQueueService {
 	public List<BlobStorageOperation> listJobQueueRemainOps(long jobId) {
 		List<BlobStorageOperation> res;
 		synchronized(lock) {
-			val jobEntry = jobOpQueueById.get(jobId);
+			val jobEntry = jobQueueById.get(jobId);
 			if (jobEntry == null) {
 				return new ArrayList<>();
 			}
 			res = jobEntry.queue.listRemainOps();
+		}
+		return res;
+	}
+
+	public List<BlobStorageOperationError> listJobQueueErrors(long jobId) {
+		synchronized(lock) {
+			val jobEntry = jobQueueById.get(jobId);
+			if (jobEntry == null) {
+				return new ArrayList<>();
+			}
+			return jobEntry.queue.listOpErrors();
+		}
+	}
+
+	public List<BlobStorageOperationWarning> listJobQueueWarnings(long jobId) {
+		synchronized(lock) {
+			val jobEntry = jobQueueById.get(jobId);
+			if (jobEntry == null) {
+				return new ArrayList<>();
+			}
+			return jobEntry.queue.listOpWarnings();
+		}
+	}
+
+	public List<BlobStorageOperationError> listJobQueuesErrors() {
+		val res = new ArrayList<BlobStorageOperationError>();
+		synchronized(lock) {
+			for(val jobEntry: jobQueueById.values()) {
+				val jobErrors = jobEntry.queue.listOpErrors();
+				if (jobErrors != null && !jobErrors.isEmpty()) {
+					res.addAll(jobErrors);
+				}
+			}
+		}
+		return res;
+	}
+
+	public List<BlobStorageOperationWarning> listJobQueuesWarnings() {
+		val res = new ArrayList<BlobStorageOperationWarning>();
+		synchronized(lock) {
+			for(val jobEntry: jobQueueById.values()) {
+				val jobWarnings = jobEntry.queue.listOpWarnings();
+				if (jobWarnings != null && !jobWarnings.isEmpty()) {
+					res.addAll(jobWarnings);
+				}
+			}
 		}
 		return res;
 	}

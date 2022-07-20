@@ -4,7 +4,7 @@ import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 
 /**
- * hook callbacks support for BlobStorageOperationExecQueue
+ * hook callbacks support for {@Link BlobStorageJobOperationsExecQueue}
  */
 public class BlobStorageOperationExecQueueHook {
 	
@@ -29,6 +29,10 @@ public class BlobStorageOperationExecQueueHook {
 	}
 
 	public void onAddOp(BlobStorageOperation op) {
+		// do nothing, cf override
+	}
+
+	public void onFinished() {
 		// do nothing, cf override
 	}
 

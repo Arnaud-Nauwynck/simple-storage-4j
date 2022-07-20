@@ -3,7 +3,6 @@ package org.simplestorage4j.api.ops.encoder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStorageId;
@@ -21,6 +20,7 @@ import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOp
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MkdirStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStoragePathDTO;
+import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
 
@@ -39,7 +39,7 @@ public class BlobStorageOperationDtoResolver {
 	// ------------------------------------------------------------------------
 	
 	public List<BlobStorageOperation> dtosToOps(Collection<BlobStorageOperationDTO> dtos) {
-		return dtos.stream().map(x -> dtoToOp(x)).collect(Collectors.toList());
+		return BlobStorageUtils.map(dtos, x -> dtoToOp(x));
 	}
 
 	public BlobStorageOperation dtoToOp(BlobStorageOperationDTO dto) {

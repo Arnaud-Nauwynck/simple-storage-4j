@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
@@ -21,17 +22,22 @@ public class ExecutorSessionService {
 
 	@Autowired
 	private StorageJobOpsQueueService storageOpsService;
-	
+
 	private final Object lock = new Object();
-	
+
 	@GuardedBy("lock")
 	private final Map<String,ExecutorSessionEntry> sessions = new HashMap<>();
-	
-	
-	
+
+	// ------------------------------------------------------------------------
+
+	@PostConstruct
+	public void init() {
+		// TODO time to check alive sessions
+	}
+
 	// handle ExecutorSession Lifecycle: start / pingAlive / stop
 	// ------------------------------------------------------------------------
-	
+
 	public void onExecutorStart(ExecutorSessionStartRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
 		val entry = new ExecutorSessionEntry(sessionId, req.host, req.startTime, req.props); 
@@ -77,5 +83,5 @@ public class ExecutorSessionService {
 	}
 
 	// ------------------------------------------------------------------------
-	
+
 }

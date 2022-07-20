@@ -5,7 +5,8 @@ import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,8 @@ public abstract class BlobStorage {
 	public abstract void mkdirs(String filePath);
 
 	public List<String> listChildNames(String filePath) {
-	    return list(filePath).stream().map(x -> x.childName()).collect(Collectors.toList());
+	    val fileInfos = list(filePath);
+		return BlobStorageUtils.map(fileInfos, x -> x.childName());
 	}
 
 	public abstract List<BlobStoreFileInfo> list(String filePath);

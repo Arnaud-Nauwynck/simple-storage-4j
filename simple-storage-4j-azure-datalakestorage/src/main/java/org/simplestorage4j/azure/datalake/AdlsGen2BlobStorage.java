@@ -1,14 +1,5 @@
 package org.simplestorage4j.azure.datalake;
 
-import com.azure.core.http.rest.PagedIterable;
-import com.azure.storage.file.datalake.DataLakeDirectoryClient;
-import com.azure.storage.file.datalake.DataLakeFileClient;
-import com.azure.storage.file.datalake.models.DataLakeFileOpenInputStreamResult;
-import com.azure.storage.file.datalake.models.FileRange;
-import com.azure.storage.file.datalake.models.PathItem;
-import com.azure.storage.file.datalake.models.PathProperties;
-import com.azure.storage.file.datalake.options.DataLakeFileInputStreamOptions;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -20,6 +11,15 @@ import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStorageGroupId;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoreFileInfo;
+
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.storage.file.datalake.DataLakeDirectoryClient;
+import com.azure.storage.file.datalake.DataLakeFileClient;
+import com.azure.storage.file.datalake.models.DataLakeFileOpenInputStreamResult;
+import com.azure.storage.file.datalake.models.FileRange;
+import com.azure.storage.file.datalake.models.PathItem;
+import com.azure.storage.file.datalake.models.PathProperties;
+import com.azure.storage.file.datalake.options.DataLakeFileInputStreamOptions;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -99,6 +99,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
         val dirClient = dirClientOf(relativePath);
         PagedIterable<PathItem> pagedIterable = dirClient.listPaths();
         val res = pagedIterable.stream().map(item -> toBlobStoreFileInfo(item)).collect(Collectors.toList());
+        // val res = BlobStorageUtils.map(pagedIterable, item -> toBlobStoreFileInfo(item));
         return res;
     }
 

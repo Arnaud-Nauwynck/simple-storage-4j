@@ -4,6 +4,10 @@ import java.util.List;
 
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationErrorDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationWarningDTO;
+import org.simplestorage4j.api.ops.executor.BlobStorageOperationError;
+import org.simplestorage4j.api.ops.executor.BlobStorageOperationWarning;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddOpsToJobQueueRequestDTO;
@@ -38,7 +42,7 @@ public class StorageJobOpsQueueRestController {
 	}
 	
 	@DeleteMapping("/{jobId}")
-	public void deleteJobQueue(@PathVariable("jobId") int jobId) {
+	public void deleteJobQueue(@PathVariable("jobId") long jobId) {
 		jobOpsQueueService.deleteJobQueue(jobId);
 	}
 	
@@ -48,7 +52,7 @@ public class StorageJobOpsQueueRestController {
 	}
 
 	@GetMapping("/{jobId}/info")
-	public JobQueueInfoDTO getJobQueueInfo(@PathVariable("jobId") int jobId) {
+	public JobQueueInfoDTO getJobQueueInfo(@PathVariable("jobId") long jobId) {
 		val res = jobOpsQueueService.getJobQueueInfo(jobId);
 		return res;
 	}
@@ -60,19 +64,25 @@ public class StorageJobOpsQueueRestController {
 	}
 	
 	@GetMapping("/{jobId}/stats")
-	public JobQueueStatsDTO getJobQueueStats(@PathVariable("jobId") int jobId) {
+	public JobQueueStatsDTO getJobQueueStats(@PathVariable("jobId") long jobId) {
 		val res = jobOpsQueueService.getJobQueueStats(jobId);
 		return res;
 	}
-	
-	@GetMapping("/stats")
-	public List<JobQueueStatsDTO> getJobQueuesStats() {
-		val res = jobOpsQueueService.getJobQueuesStats();
+
+	@GetMapping("/all-queues-stats")
+	public List<JobQueueStatsDTO> getAllJobQueuesStats() {
+		val res = jobOpsQueueService.getAllJobQueuesStats();
+		return res;
+	}
+
+	@GetMapping("/active-queues-stats")
+	public List<JobQueueStatsDTO> getActiveJobQueuesStats() {
+		val res = jobOpsQueueService.getActiveJobQueuesStats();
 		return res;
 	}
 
 	@GetMapping("/{jobId}/remain-ops")
-	public List<BlobStorageOperationDTO> listJobQueueRemainOps(@PathVariable("jobId") int jobId, 
+	public List<BlobStorageOperationDTO> listJobQueueRemainOps(@PathVariable("jobId") long jobId, 
 			@RequestParam(name = "max", required = false, defaultValue = "200") int max
 			) {
 		val allRemainOps = jobOpsQueueService.listJobQueueRemainOps(jobId);
@@ -81,4 +91,32 @@ public class StorageJobOpsQueueRestController {
 		return res;
 	}
 	
+	@GetMapping("/{jobId}/errors")
+	public List<BlobStorageOperationErrorDTO> listJobQueueErrors(
+			@PathVariable("jobId") long jobId
+			) {
+		val tmpres = jobOpsQueueService.listJobQueueErrors(jobId);
+		return BlobStorageOperationError.toDTOs(tmpres);
+	}
+
+	@GetMapping("/{jobId}/warnings")
+	public List<BlobStorageOperationWarningDTO> listJobQueueWarnings(
+			@PathVariable("jobId") long jobId
+			) {
+		val tmpres = jobOpsQueueService.listJobQueueWarnings(jobId);
+		return BlobStorageOperationWarning.toDTOs(tmpres);
+	}
+
+	@GetMapping("/errors")
+	public List<BlobStorageOperationErrorDTO> listJobQueuesErrors() {
+		val tmpres = jobOpsQueueService.listJobQueuesErrors();
+		return BlobStorageOperationError.toDTOs(tmpres);
+	}
+
+	@GetMapping("/warnings")
+	public List<BlobStorageOperationWarningDTO> listJobQueuesWarnings() {
+		val tmpres = jobOpsQueueService.listJobQueuesWarnings();
+		return BlobStorageOperationWarning.toDTOs(tmpres);
+	}
+
 }

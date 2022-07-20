@@ -1,9 +1,9 @@
-package org.simplestorage4j.opsserver.service;
+package org.simplestorage4j.api.ops;
 
 import lombok.Value;
 
 @Value
-public class JobTaskId {
+public class BlobStorageOperationId {
 	public final long jobId;
 	public final long taskId;
 }

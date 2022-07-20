@@ -2,10 +2,10 @@ package org.simplestorage4j.api.iocost.immutable;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.iocost.dto.BlobStorageOperationResultDTO;
+import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
 
@@ -104,7 +104,7 @@ public class BlobStorageOperationResult {
 	}
 
 	public static List<BlobStorageOperationResultDTO> toDtos(List<BlobStorageOperationResult> srcs) {
-		return srcs.stream().map(x -> x.toDTO()).collect(Collectors.toList());
+		return BlobStorageUtils.map(srcs, x -> x.toDTO());
 	}
 
 	public static BlobStorageOperationResult fromDTO(BlobStorageOperationResultDTO src) {
@@ -116,7 +116,7 @@ public class BlobStorageOperationResult {
 	}
 
 	public static List<BlobStorageOperationResult> fromDTOs(Collection<BlobStorageOperationResultDTO> srcs) {
-		return srcs.stream().map(x -> fromDTO(x)).collect(Collectors.toList());
+		return BlobStorageUtils.map(srcs, x -> fromDTO(x));
 	}
 
 }

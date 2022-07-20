@@ -2,11 +2,11 @@ package org.simplestorage4j.api.ops;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
+import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import lombok.Getter;
 
@@ -37,7 +37,7 @@ public abstract class BlobStorageOperation {
     public abstract BlobStorageOperationDTO toDTO();
 
     public static List<BlobStorageOperationDTO> toDTOs(Collection<BlobStorageOperation> ops) {
-    	return ops.stream().map(x -> x.toDTO()).collect(Collectors.toList());
+    	return BlobStorageUtils.map(ops, x -> x.toDTO());
     }
 
 }
