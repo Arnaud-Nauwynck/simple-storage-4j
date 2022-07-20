@@ -186,7 +186,6 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		return res;
 	}
 
-
 	@Override
     public BlobStorageOperationDTO toDTO() {
     	val entryDtos = BlobStorageUtils.map(srcEntries, x -> x.toDTO());

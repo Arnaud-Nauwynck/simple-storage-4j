@@ -45,6 +45,16 @@ public class StorageJobOpsQueueRestController {
 	public void deleteJobQueue(@PathVariable("jobId") long jobId) {
 		jobOpsQueueService.deleteJobQueue(jobId);
 	}
+
+	@PutMapping("/{jobId}/suspend")
+	public void suspendJobQueue(@PathVariable("jobId") long jobId) {
+		jobOpsQueueService.suspendJobQueue(jobId);
+	}
+
+	@PutMapping("/{jobId}/resume")
+	public void resumeJobQueue(@PathVariable("jobId") long jobId) {
+		jobOpsQueueService.resumeJobQueue(jobId);
+	}
 	
 	@PutMapping("/add-ops-to-job-queue")
 	public void addOpsToJobQueue(@RequestBody AddOpsToJobQueueRequestDTO req) {

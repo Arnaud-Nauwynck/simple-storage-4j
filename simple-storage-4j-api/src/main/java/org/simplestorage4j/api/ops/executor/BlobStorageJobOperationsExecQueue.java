@@ -31,35 +31,35 @@ public class BlobStorageJobOperationsExecQueue {
 	private final long jobId;
 
 	private final boolean keepDoneOps;
-		
+
 	private final Object lock = new Object();
-	
+
 	private AtomicLong taskIdGenerator = new AtomicLong();
-	
+
 	/**
 	 * operation ready to be executed
 	 */
 	@GuardedBy("lock")
 	private final ArrayDeque<BlobStorageOperation> queuedOps = new ArrayDeque<>();
-	
+
 	/**
 	 * operation polled by caller and running, to be marked later as done/error.
 	 */
 	@GuardedBy("lock")
 	private final Map<Long,BlobStorageOperation> runningOps = new HashMap<>();
-	
+
 	// TOADD ops that need to wait for dependencies ops to be finished
-//	private final Map<Integer,BlobStorageOperation> waitingOps = new HashMap<>();
-	
+	//	private final Map<Integer,BlobStorageOperation> waitingOps = new HashMap<>();
+
 	/**
 	 * optionnal, operations fully done. can be purged
 	 */
 	@GuardedBy("lock")
 	private final List<BlobStorageOperation> doneOps;
-	
+
 	@GuardedBy("lock")
 	private int doneOpsCount;
-	
+
 	/**
 	 * operations that failed, and may be retryed later if possible
 	 */
@@ -68,25 +68,23 @@ public class BlobStorageJobOperationsExecQueue {
 
 	@GuardedBy("lock")
 	private final Map<Long,BlobStorageOperationWarning> warningOps = new HashMap<>();
-	
-	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
-	
-	private final PerBlobStoragesPreEstimateIOCostCounter runningPreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
-	
-	private final PerBlobStoragesIOTimeCounter perStoragesIOTimeCounter = new PerBlobStoragesIOTimeCounter();
-	
-	private final PerBlobStoragesIOTimeCounter perStoragesErrorIOTimeCounter = new PerBlobStoragesIOTimeCounter();
-	
-	private final BlobStorageOperationExecQueueHook opHook;
-	
 
-	
+	private final PerBlobStoragesPreEstimateIOCostCounter queuePreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
+
+	private final PerBlobStoragesPreEstimateIOCostCounter runningPreEstimateIOCosts = new PerBlobStoragesPreEstimateIOCostCounter();
+
+	private final PerBlobStoragesIOTimeCounter perStoragesIOTimeCounter = new PerBlobStoragesIOTimeCounter();
+
+	private final PerBlobStoragesIOTimeCounter perStoragesErrorIOTimeCounter = new PerBlobStoragesIOTimeCounter();
+
+	private final BlobStorageOperationExecQueueHook opHook;
+
 	// ------------------------------------------------------------------------
-	
+
 	public BlobStorageJobOperationsExecQueue(long jobId, BlobStorageOperationExecQueueHook opHook) {
 		this(jobId, opHook, true, Collections.emptyList());
 	}
-	
+
 	public BlobStorageJobOperationsExecQueue(
 			long jobId,
 			BlobStorageOperationExecQueueHook opHook,
@@ -104,9 +102,9 @@ public class BlobStorageJobOperationsExecQueue {
 			}
 		}
 	}
-	
+
 	// ------------------------------------------------------------------------
-	
+
 	public long newTaskId() {
 		return taskIdGenerator.incrementAndGet();
 	}
@@ -162,7 +160,7 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 		return res;
 	}
-	
+
 	public void onOpExecuted(BlobStorageOperationResult result) {
 		if (result.errorMessage == null) {
 			onOpExecutedSuccess(result);
@@ -193,9 +191,9 @@ public class BlobStorageJobOperationsExecQueue {
 		val opPreEstimateCost = op.preEstimateExecutionCost();
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
 		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
-		
+
 		// TOADD update op stats per storage... for speed / counters
-		
+
 		if (opHook != null) {
 			opHook.onOpExecutedSuccess(result, op);
 			if (finished) {
@@ -222,9 +220,9 @@ public class BlobStorageJobOperationsExecQueue {
 		runningPreEstimateIOCosts.decr(opPreEstimateCost);
 		perStoragesIOTimeCounter.incr(result.ioTimePerStorage);
 		perStoragesErrorIOTimeCounter.incr(result.ioTimePerStorage);
-		
+
 		// TOADD update op stats per storage... for speed / counters
-		
+
 		if (opHook != null) {
 			opHook.onOpExecutedError(result, op);
 			if (finished) {
@@ -300,6 +298,12 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 
+	public boolean hasRemainOps() {
+		synchronized(lock) {
+			return ! queuedOps.isEmpty();
+		}
+	}
+
 	public List<BlobStorageOperationError> listOpErrors() {
 		synchronized(lock) {
 			return new ArrayList<>(errorOps.values());
@@ -311,5 +315,6 @@ public class BlobStorageJobOperationsExecQueue {
 			return new ArrayList<>(warningOps.values());
 		}
 	}
+
 
 }
