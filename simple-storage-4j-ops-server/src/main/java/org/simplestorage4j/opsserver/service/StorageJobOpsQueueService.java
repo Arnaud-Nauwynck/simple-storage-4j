@@ -216,7 +216,7 @@ public class StorageJobOpsQueueService {
 	}
 
 
-	public void onExecutorStop_reputPolledTasks(ExecutorSessionStopRequestDTO req,
+	public void onExecutorStop_reputPolledTasks(
 			List<PolledBlobStorageOperationEntry> polledJobTasks) {
 		synchronized(lock) {
 			for(val polled: polledJobTasks) {

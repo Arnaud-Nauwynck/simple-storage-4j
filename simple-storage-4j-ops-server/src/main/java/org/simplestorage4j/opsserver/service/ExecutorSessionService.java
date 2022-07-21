@@ -1,9 +1,15 @@
 package org.simplestorage4j.opsserver.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
@@ -20,7 +26,6 @@ import org.simplestorage4j.opscommon.dto.session.ExecutorSessionUpdatePollingReq
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import lombok.Getter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,11 +41,68 @@ public class ExecutorSessionService {
 	@GuardedBy("lock")
 	private final Map<String, ExecutorSessionEntry> sessions = new HashMap<>();
 
+	private long maxPingAliveMillis = 2 * 60 * 1000;
+
+	private long checkSessionAlivePeriodSeconds = 30;
+
+	private ScheduledExecutorService scheduledExecutor;
+	private ScheduledFuture<?> scheduled;
+
 	// ------------------------------------------------------------------------
 
 	@PostConstruct
 	public void init() {
-		// TODO time to check alive sessions
+		this.scheduledExecutor = createDefaultScheduledExecutor();
+		startScheduleCheckPingAlives();
+	}
+
+	private static ScheduledExecutorService createDefaultScheduledExecutor() {
+		ThreadFactory threadFactory = new ThreadFactory() {
+			@Override
+			public Thread newThread(Runnable r) {
+				val res = new Thread(r, "check-session-ping-alive");
+				res.setDaemon(true);
+				return res;
+			}
+		};
+		return Executors.newScheduledThreadPool(1, threadFactory);
+	}
+
+	public void startScheduleCheckPingAlives() {
+		if (this.scheduled != null) {
+			return;
+		}
+		this.scheduled = scheduledExecutor.scheduleAtFixedRate(() -> checkSessionsAlive(),
+				checkSessionAlivePeriodSeconds, checkSessionAlivePeriodSeconds, TimeUnit.SECONDS);
+	}
+
+	public void stopScheduleCheckPingAlives() {
+		if (this.scheduled != null) {
+			return;
+		}
+		this.scheduled.cancel(false);
+		this.scheduled = null;
+	}
+
+	private void checkSessionsAlive() {
+		val deadSessions = new ArrayList<ExecutorSessionEntry>();
+		synchronized (lock) {
+			val now = System.currentTimeMillis();
+			for (val session : sessions.values()) {
+				val lastPingMillis = now - session.lastPingAliveTime;
+				if (lastPingMillis > maxPingAliveMillis) {
+					deadSessions.add(session);
+				}
+			}
+			if (!deadSessions.isEmpty()) {
+				for (val deadSession : deadSessions) {
+					sessions.remove(deadSession.sessionId);
+				}
+			}
+		}
+		for (val deadSession : deadSessions) {
+			onExecutorSessionDead(deadSession);
+		}
 	}
 
 	// handle ExecutorSession Lifecycle: start / pingAlive / stop
@@ -60,18 +122,28 @@ public class ExecutorSessionService {
 
 	public void onExecutorStop(ExecutorSessionStopRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
+		List<PolledBlobStorageOperationEntry> polledJobTasks;
 		synchronized (lock) {
 			val found = sessions.remove(sessionId);
 			if (found == null) {
 				log.warn("session '" + sessionId + "' not found.. ignore onExecutorStop()");
 				return;
 			}
-			val polledJobTasks = found.clearGetCopyPolledJobTasks();
-			if (!polledJobTasks.isEmpty()) {
-				log.info("onExecutorStop " + sessionId + ", found " + polledJobTasks.size()
-						+ " polled tasks, re-put to queues");
-				storageOpsService.onExecutorStop_reputPolledTasks(req, polledJobTasks);
-			}
+			polledJobTasks = found.clearGetCopyPolledJobTasks();
+		}
+		if (!polledJobTasks.isEmpty()) {
+			log.info("onExecutorStop " + sessionId + ", found " + polledJobTasks.size()
+					+ " polled tasks, re-put to queues");
+			storageOpsService.onExecutorStop_reputPolledTasks(polledJobTasks);
+		}
+	}
+
+	protected void onExecutorSessionDead(ExecutorSessionEntry deadSession) {
+		val polledJobTasks = deadSession.clearGetCopyPolledJobTasks();
+		if (!polledJobTasks.isEmpty()) {
+			log.info("onExecutorSessionDead " + deadSession.sessionId + ", found " + polledJobTasks.size()
+					+ " polled tasks, re-put to queues");
+			storageOpsService.onExecutorStop_reputPolledTasks(polledJobTasks);
 		}
 	}
 
@@ -87,7 +159,7 @@ public class ExecutorSessionService {
 				log.warn("session '" + sessionId + "' not found.. implicit create");
 				String host = "?";
 				val startTime = System.currentTimeMillis();
-				val props = new HashMap<String,String>();
+				val props = new HashMap<String, String>();
 				res = new ExecutorSessionEntry(sessionId, host, startTime, props);
 				sessions.put(sessionId, res);
 			}
