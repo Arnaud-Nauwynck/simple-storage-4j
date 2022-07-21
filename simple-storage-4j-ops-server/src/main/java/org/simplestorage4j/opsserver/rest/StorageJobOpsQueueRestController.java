@@ -24,10 +24,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.val;
 
 @RestController
 @RequestMapping(path="/api/storage-ops/job-queue")
+@OpenAPIDefinition(
+		tags = { @Tag(name="jobqueue") }
+		)
 public class StorageJobOpsQueueRestController {
 
 	@Autowired

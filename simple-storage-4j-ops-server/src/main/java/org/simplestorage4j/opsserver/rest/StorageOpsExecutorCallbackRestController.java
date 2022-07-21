@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +28,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @RestController
 @RequestMapping(path="/api/storage-ops/executor-callback")
+@OpenAPIDefinition(
+		tags = { @Tag(name="jobExecutorCallback") }
+		)
 @Slf4j
 public class StorageOpsExecutorCallbackRestController {
 
