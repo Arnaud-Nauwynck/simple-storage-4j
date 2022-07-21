@@ -32,6 +32,54 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.5.2</version>
+		</dependency>
+
     </dependencies>
 
+	<profiles>
+	
+		<!-- 
+		to generate angular swagger code: 
+		mvn -Pswagger3-gen swagger-codegen:generate
+		-->
+		<profile>
+			<id>swagger3-gen</id>
+			<build>
+				<plugins>
+					<plugin>
+					    <groupId>io.swagger.codegen.v3</groupId>
+					    <artifactId>swagger-codegen-maven-plugin</artifactId>
+					    <version>3.0.25</version>
+					    <!-- 
+					    <version>3.0.32</version>
+					    -->
+						<configuration>
+							<inputSpec>http://localhost:8080/v3/api-docs</inputSpec>
+						</configuration>
+						<executions>
+							<execution>
+								<id>generate-swagger-typescript-angular-7</id>
+								<phase>generate-sources</phase>
+								<goals>
+									<goal>generate</goal>
+								</goals>
+								<configuration>
+									<language>typescript-angular</language>
+									<output>${basedir}/target/generated-typescript-angular7</output>
+									<configOptions>
+										<ngVersion>7.2.12</ngVersion>
+									</configOptions>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+                </plugins>
+            </build>
+        </profile>
+
+	</profiles>
 </project>
