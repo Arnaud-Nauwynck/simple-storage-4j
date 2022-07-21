@@ -81,7 +81,13 @@ public abstract class BlobStorage {
 	// only [int].. 2Go supported here
 	public abstract byte[] readFile(String filePath);
 
-	public abstract byte[] readAt(String filePath, long position, int len);
+	public final byte[] readAt(String filePath, long position, int len) {
+		byte[] res = new byte[len];
+		readAt(res, 0, filePath, position, len);
+		return res;
+	}
+	
+	public abstract void readAt(byte[] resBuffer, int resPos, String filePath, long position, int len);
 
 
 	// Json helper

@@ -1,5 +1,9 @@
 package org.simplestorage4j.api.ops;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.util.LoggingCounter.LoggingCounterParams;
 import org.simplestorage4j.api.util.LoggingCounter.MsgPrefixLoggingCallback;
@@ -8,6 +12,9 @@ import lombok.Getter;
 
 public class BlobStorageOperationExecContext {
 
+	@Getter
+	private final ExecutorService subTasksExecutor;
+	
 	@Getter
 	private final BlobStorageOperationsIOLoggingCounter loggingCounter_mkdir;
 
@@ -23,12 +30,14 @@ public class BlobStorageOperationExecContext {
 	
 	// ------------------------------------------------------------------------
 
-	public BlobStorageOperationExecContext() {
-		this("","", new LoggingCounterParams());
+	public BlobStorageOperationExecContext(ExecutorService subTasksExecutor) {
+		this(subTasksExecutor, "","", new LoggingCounterParams());
 	}
 
-	public BlobStorageOperationExecContext(String msgPrefix, String msgSuffix,
+	public BlobStorageOperationExecContext(ExecutorService subTasksExecutor,
+			String msgPrefix, String msgSuffix,
 			LoggingCounterParams logParams) {
+		this.subTasksExecutor = subTasksExecutor;
 		this.loggingCounter_mkdir = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "mkdir" + msgSuffix, logParams);
 		this.loggingCounter_copyFile = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFile" + msgSuffix, logParams);
 		this.loggingCounter_copyFileContent = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFileContent" + msgSuffix, logParams);
@@ -37,6 +46,10 @@ public class BlobStorageOperationExecContext {
 	
 	// ------------------------------------------------------------------------
 	
+	public <T> Future<T> submitSubTask(Callable<T> task) {
+		return subTasksExecutor.submit(task);
+	}
+
 	public void logIncr_mkdir(
 			MkdirStorageOperation op,
 			BlobStorageOperationResult opResult,

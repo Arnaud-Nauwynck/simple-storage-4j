@@ -1,5 +1,6 @@
 package org.simplestorage4j.api;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -190,7 +191,7 @@ public class FileBlobStorage extends BlobStorage {
 	}
 
 	@Override
-	public byte[] readAt(String filePath, long position, int len) {
+	public void readAt(final byte[] resBuffer, final int resPos, String filePath, long position, int len) {
 		log.info("read " + displayName + " file '" + filePath + "'");
 		val file = toFile(filePath);
 		long lenLong = file.length(); // only 2Go supported here
@@ -201,10 +202,18 @@ public class FileBlobStorage extends BlobStorage {
 			if (position != 0) {
 				BlobStorageIOUtils.skipFully(in, position);
 			}
-			byte[] res = BlobStorageIOUtils.readFully(in, len);
-			return res;
+        	int currResPos = resPos;
+        	int remainLen = len;
+            while (remainLen > 0) {
+                int count = in.read(resBuffer, currResPos, remainLen);
+                if (count < 0) {
+                    throw new EOFException(); // should not occur
+                }
+                currResPos += count;
+                remainLen -= count;
+            }
 		} catch(IOException ex) {
-			throw new RuntimeException("Failed to read file '" + filePath + "'", ex);
+			throw new RuntimeException("Failed to read file '" + filePath + "' at(" + position + ", " + len + ")", ex);
 		}
 	}
 

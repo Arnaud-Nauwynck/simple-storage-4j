@@ -1,6 +1,5 @@
 package org.simplestorage4j.api.ops;
 
-import java.io.IOException;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -15,17 +14,22 @@ import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOp
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import lombok.val;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  */
+@Slf4j
 public class CopyFileStorageOperation extends BlobStorageOperation {
 
-	public static final long MAX_CONTENT_BYTES = 10 * 1024 * 1024;
+	public static final long defaultReadContentMaxLen = 10 * 1024 * 1024;
+	private static boolean useReadByStreaming = false; // for debug only
 
+	
 	public final @Nonnull BlobStoragePath destStoragePath;
 
 	public final @Nonnull BlobStoragePath srcStoragePath;
+	
 	public final long srcFileLen;
 
 	// ------------------------------------------------------------------------
@@ -60,30 +64,18 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 		val inputIOCounter = new BlobStorageIOTimeCounter();
 		val outputIOCounter = new BlobStorageIOTimeCounter();
 
-		if (this.srcFileLen < MAX_CONTENT_BYTES) {
-			val startReadTime = System.currentTimeMillis();
-
-			byte[] data = srcStoragePath.readFile();
-
-			val readMillis = System.currentTimeMillis() - startReadTime;
-			inputIOCounter.incr(readMillis, data.length, 0L, 1, 0, 0);
-
+		if (this.srcFileLen < defaultReadContentMaxLen) {
+			byte[] data = BlobStorageIOUtils.readFileWithRetry(srcStoragePath, inputIOCounter);
 			// TOADD check data.length == srcFileLen
-
-			destStoragePath.writeFile(data);
-
-			val writeMillis = System.currentTimeMillis() - readMillis;
-			outputIOCounter.incr(writeMillis, 0L, data.length, 1, 0, 0);
-
+			BlobStorageIOUtils.writeFile(destStoragePath, data, outputIOCounter);
 		} else {
-			try (val input = srcStoragePath.openRead()) {
-				try (val output = destStoragePath.openWrite()) {
-					// equivalent to .. IOUtils.copy(input, output);
-					// with IOstats per input|output
-					BlobStorageIOUtils.copy(input, inputIOCounter, output, outputIOCounter);
-				}
-			} catch(IOException ex) {
-				throw new RuntimeException("Failed " + toString(), ex);
+			if (useReadByStreaming) {
+				BlobStorageIOUtils.copyFileUsingStreaming(srcStoragePath, inputIOCounter, destStoragePath, outputIOCounter);
+			} else {
+				// using read by range futures
+				val blockContentFutures = BlobStorageIOUtils.asyncReadFileByBlocksWithRetry(
+						srcStoragePath, srcFileLen, inputIOCounter, ctx.getSubTasksExecutor());
+				BlobStorageIOUtils.writeFileByBlockFutures(destStoragePath, outputIOCounter, blockContentFutures);
 			}
 		}
 
@@ -93,6 +85,7 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
 				);
 	}
+
 
 	@Override
 	public BlobStorageOperationDTO toDTO() {

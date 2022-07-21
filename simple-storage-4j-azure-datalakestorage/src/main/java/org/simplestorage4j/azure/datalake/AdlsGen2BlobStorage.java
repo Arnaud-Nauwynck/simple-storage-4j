@@ -2,6 +2,7 @@ package org.simplestorage4j.azure.datalake;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -258,22 +259,29 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     }
 
     @Override
-    public byte[] readAt(String relativeFilePath, long position, int len) {
+    public void readAt(final byte[] resBuffer, final int resPos, 
+    		String relativeFilePath, long position, int len) {
         long startTime = System.currentTimeMillis();
         val fileClient = fileClientOf(relativeFilePath);
-        val buffer = new ByteArrayOutputStream();
         DataLakeFileInputStreamOptions inOptions = new DataLakeFileInputStreamOptions();
         inOptions.setRange(new FileRange(position, (long)len));
-        DataLakeFileOpenInputStreamResult inResult = fileClient.openInputStream(inOptions);
-        try (val in = inResult.getInputStream()) {
-            fileClient.read(buffer);
+        DataLakeFileOpenInputStreamResult inputStreamResult = fileClient.openInputStream(inOptions);
+        try (val in = inputStreamResult.getInputStream()) {
+        	int currResPos = resPos;
+        	int remainLen = len;
+            while (remainLen > 0) {
+                int count = in.read(resBuffer, currResPos, remainLen);
+                if (count < 0) {
+                    throw new EOFException(); // should not occur
+                }
+                currResPos += count;
+                remainLen -= count;
+            }
         } catch (Exception ex) {
             throw new RuntimeException("Failed to read StorageFile '" + relativeFilePath + "'", ex);
         }
-        val data = relativeFilePath.getBytes();
         long millis = System.currentTimeMillis() - startTime;
         log.info("readAt '" + relativeFilePath + "', " + position + ", len:" + len + " .. took " + millis + " ms");
-        return data;
     }
 
     // internal

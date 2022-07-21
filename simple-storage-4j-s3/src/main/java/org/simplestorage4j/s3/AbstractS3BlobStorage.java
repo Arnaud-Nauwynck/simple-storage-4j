@@ -11,8 +11,8 @@ import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStorageGroupId;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoreFileInfo;
-import org.simplestorage4j.api.util.BlobStorageNotImpl;
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
+import org.simplestorage4j.api.util.BlobStorageNotImpl;
 
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -133,24 +133,9 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
     }
 
     @Override
-    public byte[] readAt(String filePath, final long position, final int len) {
+    public void readAt(byte[] resBuffer, int resPos, String filePath, final long position, final int len) {
         val s3 = pathToS3(filePath);
-        val in = s3Client.openObject(s3.bucketName, s3.key);
-        if (position != 0) {
-        	try {
-        		BlobStorageIOUtils.skipFully(in, position);
-            } catch (IOException ex) {
-                throw new WrappedS3ClientException("Failed skip(" + position + ") on S3 object " + s3, ex,
-                        displayName, s3.bucketName, s3.key);
-            }
-        }
-        try {
-        	val res = BlobStorageIOUtils.readFully(in, len);
-        	return res;
-        } catch (IOException ex) {
-            throw new WrappedS3ClientException("Failed read(" + ((position != 0)? "pos:" + position + ", ": "") + len + ") on S3 object " + s3, ex,
-                    displayName, s3.bucketName, s3.key);
-        }
+        s3Client.getObjectContent_range(resBuffer, resPos, s3.bucketName, s3.key, position, len);
     }
 
     // Write operations

@@ -402,25 +402,31 @@ public class S3Client {
 		}
 	}
 
+	public byte[] getObjectContent_range(String bucketName, String key, long start, int len) {
+		byte[] res = new byte[len];
+		getObjectContent_range(res, 0, bucketName, key, start, len);
+		return res;
+	}
+
 	/**
 	 * facade for <code>s3Client.getObject(bucketName, key, fromPos, toPos).getObjectContent()</code>
 	 */
-	public byte[] getObjectContent_range(String bucketName, String key, long start, int len) {
+	public void getObjectContent_range(final byte[] resBuffer, final int resPos, 
+			final String bucketName, final String key, final long start, final int len) {
 		long startTime = System.currentTimeMillis();
 		try {
 			GetObjectRequest req = new GetObjectRequest(bucketName, key);
 			req.setRange(start, start+len-1);
 			req.setSdkRequestTimeout(requestTimeoutMillis);
-			byte[] res = new byte[len];
 			for(int retry = 0; retry < maxRetry; retry++) {
 				try {
 					S3Object s3Object = s3Client.getObject(req);
 					try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent()) {
-						int resPos = 0;
+						int currPos = resPos;
 						int remainLen = len;
 						int readLen;
-						while ((readLen = s3ObjectInputStream.read(res, resPos, remainLen)) > 0) {
-							resPos += readLen;
+						while ((readLen = s3ObjectInputStream.read(resBuffer, currPos, remainLen)) > 0) {
+							currPos += readLen;
 							remainLen -= readLen;
 						}
 					} catch (IOException ex) {
@@ -438,7 +444,6 @@ public class S3Client {
 			}
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_range.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ")"));
-			return res;
 		} catch(Exception ex) {
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_range_Failed.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ") Failed " + ex.getMessage()));

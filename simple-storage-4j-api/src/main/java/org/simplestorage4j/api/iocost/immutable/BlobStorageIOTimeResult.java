@@ -8,10 +8,8 @@ import org.simplestorage4j.api.iocost.dto.BlobStorageIOTimeResultDTO;
 
 import com.google.common.collect.ImmutableMap;
 
-import lombok.AllArgsConstructor;
 import lombok.val;
 
-@AllArgsConstructor
 public class BlobStorageIOTimeResult {
 
 	public final long elapsedTimeMillis;
@@ -22,6 +20,42 @@ public class BlobStorageIOTimeResult {
 	public final int callCount;
 	public final int metadataReadCount;
 	public final int metadataWriteCount;
+
+	// ------------------------------------------------------------------------
+	
+	public BlobStorageIOTimeResult(long elapsedTimeMillis, 
+			long ioReadLen, long ioWriteLen, int callCount,
+			int metadataReadCount, int metadataWriteCount) {
+		this.elapsedTimeMillis = elapsedTimeMillis;
+		this.ioReadLen = ioReadLen;
+		this.ioWriteLen = ioWriteLen;
+		this.callCount = callCount;
+		this.metadataReadCount = metadataReadCount;
+		this.metadataWriteCount = metadataWriteCount;
+	}
+
+	public static BlobStorageIOTimeResult of(long elapsedTimeMillis, 
+			long ioReadLen, long ioWriteLen, int callCount,
+			int metadataReadCount, int metadataWriteCount) {
+		return new BlobStorageIOTimeResult(elapsedTimeMillis, ioReadLen, ioWriteLen,
+				callCount, metadataReadCount, metadataWriteCount);
+	}
+
+	public static BlobStorageIOTimeResult ofIoReadN(long elapsedMillis, long ioReadLen, int callCount) {
+		return of(elapsedMillis, ioReadLen, 0L, callCount, 0, 0);
+	}
+
+	public static BlobStorageIOTimeResult ofIoRead1(long elapsedMillis, long ioReadLen) {
+		return of(elapsedMillis, ioReadLen, 0L, 1, 0, 0);
+	}
+
+	public static BlobStorageIOTimeResult ofIoWriteN(long elapsedMillis, long ioWriteLen, int callCount) {
+		return of(elapsedMillis, 0L, ioWriteLen, callCount, 0, 0);
+	}
+
+	public static BlobStorageIOTimeResult ofIoWrite1(long elapsedMillis, long ioWriteLen) {
+		return of(elapsedMillis, 0L, ioWriteLen, 1, 0, 0);
+	}
 	
 	public static BlobStorageIOTimeResult ofSum(BlobStorageIOTimeResult left, BlobStorageIOTimeResult right) {
 		return new BlobStorageIOTimeResult(
@@ -64,5 +98,6 @@ public class BlobStorageIOTimeResult {
 		}
 		return res.build();
 	}
+
 	
 }

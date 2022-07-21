@@ -2,7 +2,12 @@ package org.simplestorage4j.api.ops;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -22,17 +27,21 @@ import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
 
+import lombok.AllArgsConstructor;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
+ * operation to zip several files from src storage, and copy to dest storage 
  */
 @Slf4j
 public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
-    private static final long MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024;
-    private static final int DEFAULT_ZIP_BUFFER_SIZE = 30 * 1024 * 1024;
+	private static final int EXTRA_ZIP_BUFFER_SIZE = 32 * 1024;
+	private static final int MAX_ZIP_BUFFER_SIZE = 10 * 1024 * 1024;
+	
+	private static final long defaultReadContentMaxLen = 10 * 1024 * 1024;
+
 
 	public final BlobStoragePath destStoragePath;
 
@@ -42,7 +51,7 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
     public final long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
 
 	/**
-	 *
+	 * zip entry of zip-copy-file operation 
 	 */
 	public static class SrcStorageZipEntry {
 
@@ -106,54 +115,72 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
     			destStoragePath.blobStorage, destIOCost);
 	}
 
-	@Override
+    @AllArgsConstructor
+    public static class ZipEntryContent {
+    	final SrcStorageZipEntry zipEntry;
+    	final List<Future<byte[]>> srcContentBlockFutures;
+    }
+
+    @Override
 	public BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		val inputIOCounter = new BlobStorageIOTimeCounter();
 		val outputIOCounter = new BlobStorageIOTimeCounter();
 
-		try (val output = destStoragePath.openWrite()) {
-			val zipOutput = new ZipOutputStream(new BufferedOutputStream(output, DEFAULT_ZIP_BUFFER_SIZE));
+		val zipEntryContentFutures = new ArrayList<Future<ZipEntryContent>>();
+		for(val srcEntry: srcEntries) {
+			// *** async read ***
+			val zipEntryContentFuture = ctx.submitSubTask(() -> readSrcEntry(ctx, srcEntry, inputIOCounter));
+			zipEntryContentFutures.add(zipEntryContentFuture);
+		}
 
-			for(val srcEntry: srcEntries) {
-				ZipEntry zipEntry = new ZipEntry(srcEntry.destEntryPath);
+		try (val output = destStoragePath.openWrite()) {
+			val bufferSize = (int) Math.min(totalEntriesFileSize + EXTRA_ZIP_BUFFER_SIZE, MAX_ZIP_BUFFER_SIZE);
+			val zipOutput = new ZipOutputStream(new BufferedOutputStream(output, bufferSize));
+
+			// *** loop read futures (in order), write to zip ***
+			for(val zipEntryContentFuture : zipEntryContentFutures) {
+				ZipEntryContent zipEntryContent;
+				try {
+					zipEntryContent = zipEntryContentFuture.get();
+				} catch (InterruptedException | ExecutionException ex) {
+					throw new RuntimeException("Failed " + toString() + ": failed to get entry content ", ex);
+				}
+				
+				val srcZipEntry = zipEntryContent.zipEntry;
+				val srcContentBlockFutures = zipEntryContent.srcContentBlockFutures;
+				
+				ZipEntry zipEntry = new ZipEntry(srcZipEntry.destEntryPath);
 				zipOutput.putNextEntry(zipEntry);
 
-				if (srcEntry.srcFileLen < MAX_DOWNLOAD_BYTES) {
-					// for small file, download content with retry..
-					val startReadTime = System.currentTimeMillis();
-
-					byte[] data = readSrcFileWithRetry(srcEntry);
-
-					val readMillis = System.currentTimeMillis() - startReadTime;
-					inputIOCounter.incr(readMillis, data.length, 0L, 1, 0, 0);
-
-					// TOADD check data.length == srcFileLen
-
-					zipOutput.write(data);
-
-					val writeMillis = System.currentTimeMillis() - readMillis;
-					outputIOCounter.incr(writeMillis, 0L, data.length, 1, 0, 0);
-
-				} else {
-					// for big file, download to temporary file? or stream in to out directly (BUT no retry on error???)
-
-					// TODO too many errors ... need retry !!!
-					// use temporary local file? or split by ranges
-
-					try (val entryInput = srcStorage.openRead(srcEntry.srcStoragePath)) {
-						// equivalent to .. IOUtils.copy(input, output);
-						// with IOstats per input|output
-						BlobStorageIOUtils.copy(entryInput, inputIOCounter, output, outputIOCounter);
+				for(val srcContentBlockFuture : srcContentBlockFutures) {
+					byte[] srcContentBlock;
+					try {
+						srcContentBlock = srcContentBlockFuture.get();
+					} catch (InterruptedException | ExecutionException ex) {
+						throw new RuntimeException("Failed " + toString() + ": failed to get entry " + srcZipEntry.destEntryPath + " block content ", ex);
 					}
+					
+					val startWrite = System.currentTimeMillis();
+					
+					zipOutput.write(srcContentBlock);
+
+					val writeMillis = System.currentTimeMillis() - startWrite;
+					outputIOCounter.incr(writeMillis, 0L, srcContentBlock.length, 1, 0, 0);
 				}
 
 				zipOutput.closeEntry();
 
 			}
 
+			val flushStartTime = System.currentTimeMillis();
+			
+			// zipOutput.finish();
 			zipOutput.flush();
 
+			val flushMillis = System.currentTimeMillis() - flushStartTime;
+			outputIOCounter.incr(flushMillis, 0L, 0L, 1, 0, 0);
+			
 		} catch(IOException ex) {
 			throw new RuntimeException("Failed " + toString(), ex);
 		}
@@ -167,23 +194,20 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		return res;
 	}
 
-	private byte[] readSrcFileWithRetry(SrcStorageZipEntry srcEntry) {
-		byte[] res = null;
-		int maxRetry = 5;
-		for(int retry = 0; retry < maxRetry; retry++) {
-			try {
-				res = srcStorage.readFile(srcEntry.srcStoragePath);
-				break;
-			} catch(RuntimeException ex) {
-				if (retry + 1 < maxRetry) {
-					log.warn("Failed read file '" + srcEntry.srcStoragePath + "' ..retry " + ex.getMessage());
-					continue;
-				} else {
-					throw ex;
-				}
-			}
+	private ZipEntryContent readSrcEntry(BlobStorageOperationExecContext ctx, 
+			SrcStorageZipEntry srcEntry, BlobStorageIOTimeCounter inputIOCounter) {
+		List<Future<byte[]>> srcContentBlockFutures;
+		if (srcEntry.srcFileLen < defaultReadContentMaxLen) {
+			// for small file, download content fully(by streaming) with retry..
+			byte[] content = BlobStorageIOUtils.readFileWithRetry(srcStorage, srcEntry.srcStoragePath, inputIOCounter);
+			srcContentBlockFutures = new ArrayList<>();
+			srcContentBlockFutures.add(CompletableFuture.completedFuture(content));
+		} else {
+			// for big file, async read by ranges (with retry per range)... return ordered future list 
+			srcContentBlockFutures = BlobStorageIOUtils.asyncReadFileByBlocksWithRetry(
+					srcStorage, srcEntry.srcStoragePath, srcEntry.srcFileLen, inputIOCounter, ctx.getSubTasksExecutor());
 		}
-		return res;
+		return new ZipEntryContent(srcEntry, srcContentBlockFutures);
 	}
 
 	@Override
