@@ -1,0 +1,12 @@
+
+storage-app:
+  blobStorages:
+    - id: store1
+      groupId: local
+      classname: FileBlobStorage
+      url: config/store1
+    - id: store2
+      groupId: local
+      classname: FileBlobStorage
+      url: config/store2
+      

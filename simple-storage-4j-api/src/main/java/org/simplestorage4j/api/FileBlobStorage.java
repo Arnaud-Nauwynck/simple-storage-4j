@@ -217,4 +217,12 @@ public class FileBlobStorage extends BlobStorage {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return "{FileBlobStorage " + id //
+				+ " dir=" + baseDir //
+				+ "}";
+	}
+
+	
 }

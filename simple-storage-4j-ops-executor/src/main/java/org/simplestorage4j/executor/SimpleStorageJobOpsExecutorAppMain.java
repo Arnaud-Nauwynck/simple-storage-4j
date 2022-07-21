@@ -1,18 +1,24 @@
 package org.simplestorage4j.executor;
 
+import org.simplestorage4j.api.BlobStorageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
+
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
-//import org.springframework.boot.SpringApplication;
-
 @Slf4j
+@SpringBootApplication
+@ComponentScan(basePackages = {"org.simplestorage4j.executor", "org.simplestorage4j.opscommon"})
 public class SimpleStorageJobOpsExecutorAppMain {
 
 	public static void main(String[] args) {
-		val app = new SimpleStorageJobOpsExecutorAppMain();
 		try {
-			app.parseArgs(args);
-			app.run();
+			SpringApplication.run(SimpleStorageJobOpsExecutorAppMain.class, args);
 		} catch(Throwable ex) {
 			log.error("Failed, exiting (-1)", ex);
 			System.out.println("(stdout) Failed, exiting (-1)");
@@ -22,18 +28,21 @@ public class SimpleStorageJobOpsExecutorAppMain {
 		}
 	}
 
-	private void parseArgs(final String[] args) {
-		for(int i = 0; i < args.length; i++) {
-			
-		}
-		// TODO Auto-generated method stub
-	}
+}
 
+@Component
+@Slf4j
+class AppCmdLineRunner implements CommandLineRunner {
 
-	private void run() {
+	@Autowired 
+	protected BlobStorageRepository storageRepo;
+	
+	@Override
+	public void run(String... args) throws Exception {
+		log.info("starting..");
+		val repos = storageRepo.findAll();
+		log.info("repos: " + repos);
 		
-		// TODO Auto-generated method stub
-		
 	}
-
+	
 }

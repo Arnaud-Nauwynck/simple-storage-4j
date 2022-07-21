@@ -1,4 +1,4 @@
-package org.simplestorage4j.executor.configuration;
+package org.simplestorage4j.opscommon.configuration;
 
 import java.util.List;
 import java.util.Map;
@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 import lombok.Getter;
 import lombok.Setter;
 
-@ConfigurationProperties(prefix = "app")
+@ConfigurationProperties(prefix = "storage-app")
 @Component
 @Getter @Setter
-public class OpsExecutorAppParams {
+public class CommonStorageOpsAppParams {
 
 	private List<BlobStorageParams> blobStorages;
 	

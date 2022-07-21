@@ -1,4 +1,4 @@
-package org.simplestorage4j.executor.configuration;
+package org.simplestorage4j.opscommon.configuration;
 
 import java.io.File;
 import java.net.InetSocketAddress;
@@ -14,7 +14,7 @@ import org.simplestorage4j.api.FileBlobStorage;
 import org.simplestorage4j.api.util.BlobStorageUtils;
 import org.simplestorage4j.azure.datalake.AdlsGen2BlobStorage;
 import org.simplestorage4j.azure.datalake.configuration.AzureStorageFactoryUtils;
-import org.simplestorage4j.executor.configuration.OpsExecutorAppParams.BlobStorageParams;
+import org.simplestorage4j.opscommon.configuration.CommonStorageOpsAppParams.BlobStorageParams;
 import org.simplestorage4j.s3.BucketAsFirstDirS3BlobStorage;
 import org.simplestorage4j.s3.FixedBucketS3BlobStorage;
 import org.simplestorage4j.s3.S3Client;
@@ -34,10 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @Slf4j
-public class OpsExecutorAppConfiguration {
+public class CommonStorageOpsAppConfiguration {
 
 	@Autowired
-	private OpsExecutorAppParams appParams;
+	private CommonStorageOpsAppParams appParams;
 
 	// ------------------------------------------------------------------------
 	
