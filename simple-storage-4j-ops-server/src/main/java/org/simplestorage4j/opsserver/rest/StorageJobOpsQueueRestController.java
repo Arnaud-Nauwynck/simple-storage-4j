@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.val;
 
@@ -41,17 +42,20 @@ public class StorageJobOpsQueueRestController {
 	// ------------------------------------------------------------------------
 	
 	@PutMapping()
+	@Operation(description = "create Job Queue")
 	public AddJobOpsQueueResponseDTO createJobQueue(@RequestBody AddJobOpsQueueRequestDTO req) {
 		val res = jobOpsQueueService.createJobQueue(req);
 		return res;
 	}
 	
 	@DeleteMapping("/{jobId}")
+	@Operation(description = "delete Job Queue")
 	public void deleteJobQueue(@PathVariable("jobId") long jobId) {
 		jobOpsQueueService.deleteJobQueue(jobId);
 	}
 
 	@PutMapping("/{jobId}/suspend")
+	@Operation(description = "suspend Job Queue")
 	public void suspendJobQueue(@PathVariable("jobId") long jobId) {
 		jobOpsQueueService.suspendJobQueue(jobId);
 	}

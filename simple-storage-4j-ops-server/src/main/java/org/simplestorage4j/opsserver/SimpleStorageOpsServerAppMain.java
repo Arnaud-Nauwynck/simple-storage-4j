@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"org.simplestorage4j.executor", "org.simplestorage4j.opscommon"})
+@ComponentScan(basePackages = {"org.simplestorage4j.opsserver", "org.simplestorage4j.opscommon"})
 public class SimpleStorageOpsServerAppMain {
 
 	public static void main(String[] args) {
