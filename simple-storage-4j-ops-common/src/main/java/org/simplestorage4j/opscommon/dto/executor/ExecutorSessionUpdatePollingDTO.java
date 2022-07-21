@@ -2,19 +2,22 @@ package org.simplestorage4j.opscommon.dto.executor;
 
 import java.io.Serializable;
 
-import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
-
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor @AllArgsConstructor
-public class ExecutorSessionPollOpResponseDTO implements Serializable {
+@Getter @Setter
+public class ExecutorSessionUpdatePollingDTO implements Serializable {
 
 	/** */
 	private static final long serialVersionUID = 1L;
 
-	public BlobStorageOperationDTO op;
+	public boolean pollingSuspendRequested;
 
-	public ExecutorSessionUpdatePollingDTO pollingResp;
-
+	public boolean stopRequested;
+	
+	public boolean killRequested;
+	
 }

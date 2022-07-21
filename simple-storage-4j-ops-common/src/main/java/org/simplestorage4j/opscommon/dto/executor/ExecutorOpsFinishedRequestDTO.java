@@ -20,5 +20,7 @@ public class ExecutorOpsFinishedRequestDTO implements Serializable {
 	public String sessionId;
 	
 	public List<BlobStorageOperationResultDTO> opResults;
-	
+
+	public int pollCount;
+
 }

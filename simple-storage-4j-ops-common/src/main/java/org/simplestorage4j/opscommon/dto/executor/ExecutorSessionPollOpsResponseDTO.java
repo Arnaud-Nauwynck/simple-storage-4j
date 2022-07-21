@@ -16,4 +16,6 @@ public class ExecutorSessionPollOpsResponseDTO implements Serializable {
 
 	public List<BlobStorageOperationDTO> ops;
 
+	public ExecutorSessionUpdatePollingDTO pollingResp;
+
 }

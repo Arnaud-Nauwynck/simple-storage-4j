@@ -14,22 +14,19 @@ import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOp
 import org.simplestorage4j.api.util.BlobStorageIOUtils;
 
 import lombok.val;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  */
-@Slf4j
 public class CopyFileStorageOperation extends BlobStorageOperation {
 
-	public static final long defaultReadContentMaxLen = 10 * 1024 * 1024;
+	private static final long defaultReadContentMaxLen = 10 * 1024 * 1024;
 	private static boolean useReadByStreaming = false; // for debug only
 
-	
 	public final @Nonnull BlobStoragePath destStoragePath;
 
 	public final @Nonnull BlobStoragePath srcStoragePath;
-	
+
 	public final long srcFileLen;
 
 	// ------------------------------------------------------------------------
@@ -85,7 +82,6 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 				destStoragePath.blobStorage.id, outputIOCounter.toImmutable()
 				);
 	}
-
 
 	@Override
 	public BlobStorageOperationDTO toDTO() {

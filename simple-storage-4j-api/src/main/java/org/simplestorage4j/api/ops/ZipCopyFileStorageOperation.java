@@ -39,16 +39,14 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
 	private static final int EXTRA_ZIP_BUFFER_SIZE = 32 * 1024;
 	private static final int MAX_ZIP_BUFFER_SIZE = 10 * 1024 * 1024;
-	
 	private static final long defaultReadContentMaxLen = 10 * 1024 * 1024;
-
 
 	public final BlobStoragePath destStoragePath;
 
 	public final @Nonnull BlobStorage srcStorage;
-    public final ImmutableList<SrcStorageZipEntry> srcEntries;
+	public final ImmutableList<SrcStorageZipEntry> srcEntries;
 
-    public final long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
+	public final long totalEntriesFileSize; // = computed from srcEntries srcEntry.srcFileLen
 
 	/**
 	 * zip entry of zip-copy-file operation 
@@ -58,7 +56,7 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		public final @Nonnull String destEntryPath;
 		public final @Nonnull String srcStoragePath;
 		public final long srcFileLen;
-		
+
 		public SrcStorageZipEntry(@Nonnull String destEntryPath,
 				@Nonnull String srcStoragePath,
 				long srcFileLen) {
@@ -66,7 +64,7 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 			this.srcStoragePath = Objects.requireNonNull(srcStoragePath);
 			this.srcFileLen = srcFileLen;
 		}
-		
+
 		public SrcStorageZipEntryDTO toDTO() {
 			return new SrcStorageZipEntryDTO(destEntryPath, srcStoragePath, srcFileLen);
 		}
@@ -82,46 +80,45 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 
 	}
 
-    // ------------------------------------------------------------------------
-	
-    public ZipCopyFileStorageOperation(long jobId, long taskId, //
-    		@Nonnull BlobStoragePath destStoragePath,
-    		@Nonnull BlobStorage srcStorage,
-    		@Nonnull ImmutableList<SrcStorageZipEntry> srcEntries) {
-        super(jobId, taskId);
-        this.destStoragePath = Objects.requireNonNull(destStoragePath);
-        this.srcStorage = srcStorage;
-        this.srcEntries = Objects.requireNonNull(srcEntries);
-        long totalEntriesFileSize = 0;
-        for(val srcEntry: srcEntries) {
-            totalEntriesFileSize += srcEntry.srcFileLen;
-        }
-        this.totalEntriesFileSize = totalEntriesFileSize;
+	// ------------------------------------------------------------------------
 
-    }
-
-    // ------------------------------------------------------------------------
-
-    @Override
-    public String taskTypeName() {
-        return "zip-copy-file";
-    }
-
-    @Override
-	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
-    	val srcIOCost = BlobStoragePreEstimateIOCost.ofIoRead(totalEntriesFileSize, srcEntries.size());
-    	val destIOCost = BlobStoragePreEstimateIOCost.ofIoWrite(totalEntriesFileSize, 1);
-    	return PerBlobStoragesPreEstimateIOCost.of(srcStorage, srcIOCost,
-    			destStoragePath.blobStorage, destIOCost);
+	public ZipCopyFileStorageOperation(long jobId, long taskId, //
+			@Nonnull BlobStoragePath destStoragePath,
+			@Nonnull BlobStorage srcStorage,
+			@Nonnull ImmutableList<SrcStorageZipEntry> srcEntries) {
+		super(jobId, taskId);
+		this.destStoragePath = Objects.requireNonNull(destStoragePath);
+		this.srcStorage = srcStorage;
+		this.srcEntries = Objects.requireNonNull(srcEntries);
+		long totalEntriesFileSize = 0;
+		for(val srcEntry: srcEntries) {
+			totalEntriesFileSize += srcEntry.srcFileLen;
+		}
+		this.totalEntriesFileSize = totalEntriesFileSize;
 	}
 
-    @AllArgsConstructor
-    public static class ZipEntryContent {
-    	final SrcStorageZipEntry zipEntry;
-    	final List<Future<byte[]>> srcContentBlockFutures;
-    }
+	// ------------------------------------------------------------------------
 
-    @Override
+	@Override
+	public String taskTypeName() {
+		return "zip-copy-file";
+	}
+
+	@Override
+	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
+		val srcIOCost = BlobStoragePreEstimateIOCost.ofIoRead(totalEntriesFileSize, srcEntries.size());
+		val destIOCost = BlobStoragePreEstimateIOCost.ofIoWrite(totalEntriesFileSize, 1);
+		return PerBlobStoragesPreEstimateIOCost.of(srcStorage, srcIOCost,
+				destStoragePath.blobStorage, destIOCost);
+	}
+
+	@AllArgsConstructor
+	public static class ZipEntryContent {
+		final SrcStorageZipEntry zipEntry;
+		final List<Future<byte[]>> srcContentBlockFutures;
+	}
+
+	@Override
 	public BlobStorageOperationResult execute(BlobStorageOperationExecContext ctx) {
 		val startTime = System.currentTimeMillis();
 		val inputIOCounter = new BlobStorageIOTimeCounter();
@@ -146,10 +143,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 				} catch (InterruptedException | ExecutionException ex) {
 					throw new RuntimeException("Failed " + toString() + ": failed to get entry content ", ex);
 				}
-				
+
 				val srcZipEntry = zipEntryContent.zipEntry;
 				val srcContentBlockFutures = zipEntryContent.srcContentBlockFutures;
-				
+
 				ZipEntry zipEntry = new ZipEntry(srcZipEntry.destEntryPath);
 				zipOutput.putNextEntry(zipEntry);
 
@@ -160,9 +157,9 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 					} catch (InterruptedException | ExecutionException ex) {
 						throw new RuntimeException("Failed " + toString() + ": failed to get entry " + srcZipEntry.destEntryPath + " block content ", ex);
 					}
-					
+
 					val startWrite = System.currentTimeMillis();
-					
+
 					zipOutput.write(srcContentBlock);
 
 					val writeMillis = System.currentTimeMillis() - startWrite;
@@ -174,13 +171,13 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 			}
 
 			val flushStartTime = System.currentTimeMillis();
-			
+
 			// zipOutput.finish();
 			zipOutput.flush();
 
 			val flushMillis = System.currentTimeMillis() - flushStartTime;
 			outputIOCounter.incr(flushMillis, 0L, 0L, 1, 0, 0);
-			
+
 		} catch(IOException ex) {
 			throw new RuntimeException("Failed " + toString(), ex);
 		}
@@ -211,10 +208,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 	}
 
 	@Override
-    public BlobStorageOperationDTO toDTO() {
-    	val entryDtos = BlobStorageUtils.map(srcEntries, x -> x.toDTO());
+	public BlobStorageOperationDTO toDTO() {
+		val entryDtos = BlobStorageUtils.map(srcEntries, x -> x.toDTO());
 		return new ZipCopyFileStorageOperationDTO(jobId, taskId, destStoragePath.toDTO(), srcStorage.id.id, entryDtos);
-    }
+	}
 
 	@Override
 	public String toString() {
@@ -224,5 +221,5 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 				+ ", srcEntries=" + srcEntries
 				+ "}";
 	}
-	
+
 }

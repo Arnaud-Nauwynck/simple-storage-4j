@@ -29,25 +29,25 @@ import retrofit2.http.PUT;
  * Retrofit2 client corresponding to {@Link org.simplestorage4j.opsserver.rest.StorageOpsExecutorRestController}
  */
 @Slf4j
-public class StorageJobOpsExecutorClient {
+public class StorageJobOpsExecutorCallbackClient {
 
 	private String sessionId; // generated on client-side, at init
 	private String hostname;
 	private long startTime;
 	private Map<String,String> props;
-	
-	private StorageJobOpsExecutorRetrofit2Interface delegate;
-	
+
+	private StorageJobOpsExecutorCallbackRetrofit2Interface delegate;
+
 	private final LoggingCounter loggingCounter_call = new LoggingCounter("executorClient call", new LoggingCounterParams(1, 0));
 	private final LoggingCounter loggingCounter_pingAlive = new LoggingCounter("executorClient pingAlive", new LoggingCounterParams(100, 600_000));
 	private final LoggingCounter loggingCounter_pollOp = new LoggingCounter("executorClient pollOp", new LoggingCounterParams(100, 600_000));
 	private final LoggingCounter loggingCounter_onOpsFinished = new LoggingCounter("executorClient onOpsFinished", new LoggingCounterParams(100, 600_000));
 	private final LoggingCounter loggingCounter_onOpFinishedPollNext = new LoggingCounter("executorClient onOpFinishedPollNext", new LoggingCounterParams(100, 600_000));
 	private final LoggingCounter loggingCounter_onOpsFinishedPollNexts = new LoggingCounter("executorClient onOpsFinishedPollNexts", new LoggingCounterParams(100, 600_000));
-	
+
 	// ------------------------------------------------------------------------
-	
-	public StorageJobOpsExecutorClient(String baseServerUrl, Map<String,String> props) {
+
+	public StorageJobOpsExecutorCallbackClient(String baseServerUrl, Map<String,String> props) {
 		try {
 			this.hostname = InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException ex) {
@@ -57,48 +57,48 @@ public class StorageJobOpsExecutorClient {
 		this.sessionId = hostname + ":" + System.currentTimeMillis();
 		this.startTime = System.currentTimeMillis();
 		this.props = props;
-		
+
 		// Retrofit2.
 		// TODO
 	}
 
 	// ------------------------------------------------------------------------
-	
-	private static interface StorageJobOpsExecutorRetrofit2Interface {
-		
-		public static final String BASE_PATH = "api/storage-ops/executor";
-		
+
+	private static interface StorageJobOpsExecutorCallbackRetrofit2Interface {
+
+		public static final String BASE_PATH = "api/storage-ops/executor-callback";
+
 		@PUT(BASE_PATH + "/onExecutorStart")
 		public Call<Void> onExecutorStart(@Body ExecutorSessionStartRequestDTO req);
-		
+
 		@PUT(BASE_PATH + "/onExecutorStop")
 		public Call<Void> onExecutorStop(@Body ExecutorSessionStopRequestDTO req);
-	
+
 		@PUT(BASE_PATH + "/onExecutorPingAlive")
 		public Call<Void> onExecutorPingAlive(@Body ExecutorSessionPingAliveRequestDTO req);
-		
+
 		@PUT(BASE_PATH + "/poll-op")
 		public Call<ExecutorSessionPollOpResponseDTO> pollOp(@Body ExecutorSessionPollOpRequestDTO req);
-	
+
 		@PUT(BASE_PATH + "/on-ops-finished")
 		public Call<Void> onOpsFinished(@Body ExecutorOpsFinishedRequestDTO req);
-		
+
 		@PUT(BASE_PATH + "/on-op-finished-poll-next")
 		public Call<ExecutorSessionPollOpResponseDTO> onOpFinishedPollNext(@Body ExecutorOpFinishedPollNextRequestDTO req);
 
 		@PUT(BASE_PATH + "/on-ops-finished-poll-nexts")
 		public Call<ExecutorSessionPollOpResponseDTO> onOpsFinishedPollNext(@Body ExecutorOpsFinishedRequestDTO req);
-		
+
 	}
 
 	// ------------------------------------------------------------------------
-	
+
 	public void onExecutorStart() {
 		val req = new ExecutorSessionStartRequestDTO(sessionId, hostname, startTime, props);
 		execHttp(loggingCounter_call, "PUT", "onExecutorStart", "", //
 				delegate.onExecutorStart(req));
 	}
-	
+
 	public void onExecutorStop(String stopReason) {
 		val req = new ExecutorSessionStopRequestDTO(sessionId, stopReason);
 		execHttp(loggingCounter_call, "PUT", "onExecutorStop", "", //
@@ -110,7 +110,7 @@ public class StorageJobOpsExecutorClient {
 		execHttp(loggingCounter_pingAlive, "PUT", "onExecutorPingAlive", "", //
 				delegate.onExecutorPingAlive(req));
 	}
-	
+
 	public ExecutorSessionPollOpResponseDTO pollOp() {
 		val req = new ExecutorSessionPollOpRequestDTO(sessionId);
 		return execHttp(loggingCounter_pollOp, "PUT", "pollOp", "", //
@@ -119,11 +119,11 @@ public class StorageJobOpsExecutorClient {
 
 	public void onOpsFinished(List<BlobStorageOperationResult> opResults) {
 		val opResultDtos = BlobStorageOperationResult.toDtos(opResults);
-		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos);
+		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos, 0);
 		execHttp(loggingCounter_onOpsFinished, "PUT", "onOpsFinished", "", //
 				delegate.onOpsFinished(req));
 	}
-	
+
 	public ExecutorSessionPollOpResponseDTO onOpFinishedPollNext(BlobStorageOperationResult opResult) {
 		val opResultDto = opResult.toDTO();
 		val req = new ExecutorOpFinishedPollNextRequestDTO(sessionId, opResultDto);
@@ -131,15 +131,15 @@ public class StorageJobOpsExecutorClient {
 				delegate.onOpFinishedPollNext(req));
 	}
 
-	public ExecutorSessionPollOpResponseDTO onOpsFinishedPollNexts(List<BlobStorageOperationResult> opResults) {
+	public ExecutorSessionPollOpResponseDTO onOpsFinishedPollNexts(List<BlobStorageOperationResult> opResults, int pollCount) {
 		val opResultDtos = BlobStorageOperationResult.toDtos(opResults);
-		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos);
+		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos, pollCount);
 		return execHttp(loggingCounter_onOpsFinishedPollNexts, "PUT", "onOpsFinishedPollNext", "", //
 				delegate.onOpsFinishedPollNext(req));
 	}
-	
+
 	// ------------------------------------------------------------------------
-	
+
 	protected <T> T execHttp(
 			LoggingCounter loggingCounter,
 			String httpMethod, String httpRelativePath, String displayMessage,
@@ -168,7 +168,7 @@ public class StorageJobOpsExecutorClient {
 			}
 			throw new RuntimeException("Failed http " + httpMethod + " " + httpRelativePath + ": " + errorCode + " " + errorBodyText);
 		}
-		
+
 		val res = resp.body();
 
 		val millis = System.currentTimeMillis() - startTime;
