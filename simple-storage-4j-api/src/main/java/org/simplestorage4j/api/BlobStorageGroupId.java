@@ -2,14 +2,20 @@ package org.simplestorage4j.api;
 
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
+
 public class BlobStorageGroupId {
 
-	public final String id;
+	public final @Nonnull String id;
 
 	// ------------------------------------------------------------------------
 	
-	public BlobStorageGroupId(String id) {
-		this.id = id;
+	public BlobStorageGroupId(@Nonnull String id) {
+		this.id = Objects.requireNonNull(id);
+	}
+
+	public static BlobStorageGroupId of(@Nonnull String id) {
+		return new BlobStorageGroupId(id);
 	}
 
 	// ------------------------------------------------------------------------
