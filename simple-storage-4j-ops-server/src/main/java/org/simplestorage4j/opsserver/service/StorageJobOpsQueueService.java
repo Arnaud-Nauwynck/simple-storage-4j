@@ -10,15 +10,16 @@ import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.MockSleepStorageOperation;
 import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
 import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationError;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueueHook;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationWarning;
 import org.simplestorage4j.api.util.BlobStorageUtils;
-import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
+import org.simplestorage4j.opscommon.dto.queue.AddMockOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueInfoDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueStatsDTO;
@@ -128,6 +129,25 @@ public class StorageJobOpsQueueService {
 			val entry = jobQueueById.get(req.jobId);
 			boolean hasRemainOpsBefore = entry.queue.hasRemainOps(); 
 			entry.queue.addOps(ops);
+			if (entry.isPollingActive() && ! hasRemainOpsBefore) {
+				activeJobQueues.add(entry);
+			}
+		}
+	}
+
+	public void addMockOpsToJobQueue(AddMockOpsToJobQueueRequestDTO req) {
+		synchronized(lock) {
+			val jobId = req.jobId;
+			val entry = jobQueueById.get(jobId);
+			boolean hasRemainOpsBefore = entry.queue.hasRemainOps(); 
+			val mockOps = new ArrayList<BlobStorageOperation>();
+			val mockDurationMillis = req.mockOpsDurationMillis;
+			for(int i = 0; i < req.mockOpsCount; i++) {
+				val taskId = entry.queue.newTaskId();
+				val mockOp = new MockSleepStorageOperation(jobId, taskId, mockDurationMillis);
+				mockOps.add(mockOp);
+			}
+			entry.queue.addOps(mockOps);
 			if (entry.isPollingActive() && ! hasRemainOpsBefore) {
 				activeJobQueues.add(entry);
 			}

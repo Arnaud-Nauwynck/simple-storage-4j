@@ -8,6 +8,7 @@ import javax.annotation.Nonnull;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileContentStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MkdirStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MockSleepStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -16,7 +17,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * DTO class for {@link org.simplestorage4j.api.ops.BlobStorageOperation}
@@ -28,8 +31,10 @@ import lombok.NoArgsConstructor;
 	@Type(name="copy-file", value=CopyFileStorageOperationDTO.class),
 	@Type(name="mkdir", value=MkdirStorageOperationDTO.class),
 	@Type(name="zip-copy-file", value=ZipCopyFileStorageOperationDTO.class),
+	@Type(name="mock-sleep-op", value=MockSleepStorageOperationDTO.class),
 })
 @NoArgsConstructor @AllArgsConstructor
+@Getter @Setter
 public abstract class BlobStorageOperationDTO implements Serializable {
 
 	/** */
@@ -43,6 +48,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	// ------------------------------------------------------------------------
 
 	@NoArgsConstructor
+	@Getter @Setter
 	public static class CopyFileContentStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
@@ -64,6 +70,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	// ------------------------------------------------------------------------
 
 	@NoArgsConstructor
+	@Getter @Setter
 	public static class CopyFileStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
@@ -86,6 +93,8 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// ------------------------------------------------------------------------
 
+	@NoArgsConstructor
+	@Getter @Setter
 	public static class MkdirStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
@@ -103,6 +112,8 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 	// ------------------------------------------------------------------------
 
+	@NoArgsConstructor
+	@Getter @Setter
 	public static class ZipCopyFileStorageOperationDTO extends BlobStorageOperationDTO {
 
 		/** */
@@ -125,6 +136,7 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 	}
 	
 	@AllArgsConstructor @NoArgsConstructor
+	@Getter @Setter
 	public static class SrcStorageZipEntryDTO implements Serializable {
 
 		/** */
@@ -142,6 +154,32 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 					+ " (len: " + srcFileLen + ")"
 					+ "}";
 		}
+	}
+
+	// ------------------------------------------------------------------------
+	
+	@NoArgsConstructor
+	@Getter @Setter
+	public static class MockSleepStorageOperationDTO extends BlobStorageOperationDTO {
+
+		/** */
+		private static final long serialVersionUID = 1L;
+
+		public int mockDurationMillis;
+
+	    public MockSleepStorageOperationDTO(long jobId, long taskId, //
+	    		int mockDurationMillis) {
+	    	super(jobId, taskId);
+	    	this.mockDurationMillis = mockDurationMillis;
+	    }
+
+		@Override
+		public String toString() {
+			return "{mock-sleep " //
+					+ mockDurationMillis //
+					+ "}";
+		}
+
 	}
 
 }

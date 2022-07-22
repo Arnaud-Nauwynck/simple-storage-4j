@@ -10,6 +10,7 @@ import org.simplestorage4j.api.ops.executor.BlobStorageOperationError;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationWarning;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueResponseDTO;
+import org.simplestorage4j.opscommon.dto.queue.AddMockOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueInfoDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueStatsDTO;
@@ -68,6 +69,11 @@ public class StorageJobOpsQueueRestController {
 	@PutMapping("/add-ops-to-job-queue")
 	public void addOpsToJobQueue(@RequestBody AddOpsToJobQueueRequestDTO req) {
 		jobOpsQueueService.addOpsToJobQueue(req);
+	}
+
+	@PutMapping("/add-mock-ops-to-job-queue")
+	public void addOpsToJobQueue(@RequestBody AddMockOpsToJobQueueRequestDTO req) {
+		jobOpsQueueService.addMockOpsToJobQueue(req);
 	}
 
 	@GetMapping("/{jobId}/info")

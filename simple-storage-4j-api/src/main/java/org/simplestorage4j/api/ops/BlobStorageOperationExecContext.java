@@ -29,7 +29,10 @@ public class BlobStorageOperationExecContext {
 
 	@Getter
 	private final BlobStorageOperationsIOLoggingCounter loggingCounter_zipCopyFile;
-	
+
+	@Getter
+	private final BlobStorageOperationsIOLoggingCounter loggingCounter_mockSleep;
+
 	
 	// ------------------------------------------------------------------------
 
@@ -47,6 +50,7 @@ public class BlobStorageOperationExecContext {
 		this.loggingCounter_copyFile = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFile" + msgSuffix, logParams);
 		this.loggingCounter_copyFileContent = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFileContent" + msgSuffix, logParams);
 		this.loggingCounter_zipCopyFile = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "zipCopyFile" + msgSuffix, logParams);
+		this.loggingCounter_mockSleep = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "mockSleep" + msgSuffix, logParams);
 	}
 	
 	// ------------------------------------------------------------------------
@@ -85,6 +89,12 @@ public class BlobStorageOperationExecContext {
 			BlobStorageOperationResult opResult,
 			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
 		loggingCounter_zipCopyFile.logIncr(opResult, msgPrefixLoggingCallback);
+	}
+
+	public void logIncr_mockSleep(MockSleepStorageOperation op, 
+			BlobStorageOperationResult opResult,
+			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
+		loggingCounter_mockSleep.logIncr(opResult, msgPrefixLoggingCallback);
 	}
 
 }
