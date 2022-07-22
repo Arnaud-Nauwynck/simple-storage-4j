@@ -146,7 +146,7 @@ public class StorageJobOpsQueueService {
 
 	public List<JobQueueInfoDTO> getJobQueueInfos() {
 		synchronized(lock) {
-			return BlobStorageUtils.map(activeJobQueues, x -> toJobQueueInfoDTO(x));
+			return BlobStorageUtils.map(jobQueueById.values(), x -> toJobQueueInfoDTO(x));
 		}
 	}
 

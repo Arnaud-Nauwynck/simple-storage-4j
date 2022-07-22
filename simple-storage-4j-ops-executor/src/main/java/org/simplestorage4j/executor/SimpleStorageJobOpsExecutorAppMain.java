@@ -1,6 +1,7 @@
 package org.simplestorage4j.executor;
 
 import org.simplestorage4j.api.BlobStorageRepository;
+import org.simplestorage4j.executor.impl.StorageJobOpsExecutorCallbackClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -19,6 +20,7 @@ public class SimpleStorageJobOpsExecutorAppMain {
 	public static void main(String[] args) {
 		try {
 			SpringApplication.run(SimpleStorageJobOpsExecutorAppMain.class, args);
+			System.out.println("(stdout) Finished");
 		} catch(Throwable ex) {
 			log.error("Failed, exiting (-1)", ex);
 			System.out.println("(stdout) Failed, exiting (-1)");
@@ -37,12 +39,24 @@ class AppCmdLineRunner implements CommandLineRunner {
 	@Autowired 
 	protected BlobStorageRepository storageRepo;
 	
+	@Autowired 
+	protected StorageJobOpsExecutorCallbackClient callbackClient;
+	
 	@Override
 	public void run(String... args) throws Exception {
 		log.info("starting..");
 		val repos = storageRepo.findAll();
 		log.info("repos: " + repos);
 		
+		log.info("call callbackClient.onExecutorStart ..");
+		callbackClient.onExecutorStart();
+		log.info("done onExecutorStart");
+		
+		log.info("sleep 2 mn..");
+		Thread.sleep(2 * 60 * 1000);
+	
+		log.info("call callbackClient.onExecutorStop ..");
+		callbackClient.onExecutorStop("ok");
 	}
 	
 }

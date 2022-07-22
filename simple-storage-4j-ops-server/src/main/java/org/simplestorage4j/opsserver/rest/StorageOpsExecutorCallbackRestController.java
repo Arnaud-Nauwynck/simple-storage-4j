@@ -47,13 +47,13 @@ public class StorageOpsExecutorCallbackRestController {
 	}
 	
 	@PutMapping("/onExecutorStop")
-	public void onExecutorStop(ExecutorSessionStopRequestDTO req) {
+	public void onExecutorStop(@RequestBody ExecutorSessionStopRequestDTO req) {
 		log.info("http PUT /onExecutorStop " + req.sessionId);
 		delegate.onExecutorStop(req);
 	}
 
 	@PutMapping("/onExecutorPingAlive")
-	public void onExecutorPingAlive(ExecutorSessionPingAliveRequestDTO req) {
+	public void onExecutorPingAlive(@RequestBody ExecutorSessionPingAliveRequestDTO req) {
 		log.debug("http PUT /onExecutorPingAlive " + req.sessionId);
 		delegate.onExecutorPingAlive(req);
 	}

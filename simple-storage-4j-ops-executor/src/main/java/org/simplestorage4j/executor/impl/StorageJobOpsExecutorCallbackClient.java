@@ -19,14 +19,17 @@ import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 import retrofit2.http.Body;
 import retrofit2.http.PUT;
 
 /**
- * Retrofit2 client corresponding to {@Link org.simplestorage4j.opsserver.rest.StorageOpsExecutorRestController}
+ * Retrofit2 client corresponding to {@Link org.simplestorage4j.opsserver.rest.StorageOpsExecutorCallbackRestController}
  */
 @Slf4j
 public class StorageJobOpsExecutorCallbackClient {
@@ -47,7 +50,7 @@ public class StorageJobOpsExecutorCallbackClient {
 
 	// ------------------------------------------------------------------------
 
-	public StorageJobOpsExecutorCallbackClient(String baseServerUrl, Map<String,String> props) {
+	public StorageJobOpsExecutorCallbackClient(OkHttpClient okHttpClient, String baseServerUrl, Map<String,String> props) {
 		try {
 			this.hostname = InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException ex) {
@@ -58,8 +61,14 @@ public class StorageJobOpsExecutorCallbackClient {
 		this.startTime = System.currentTimeMillis();
 		this.props = props;
 
-		// Retrofit2.
-		// TODO
+		Retrofit retrofit = new Retrofit.Builder()
+			    .baseUrl(baseServerUrl)
+			    .client(okHttpClient)
+			    .addConverterFactory(JacksonConverterFactory.create())
+		        // .addConverterFactory(ScalarsConverterFactory.create())
+			    .build();
+
+		this.delegate = retrofit.create(StorageJobOpsExecutorCallbackRetrofit2Interface.class);
 	}
 
 	// ------------------------------------------------------------------------

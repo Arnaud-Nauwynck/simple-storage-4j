@@ -9,4 +9,8 @@ storage-app:
       groupId: local
       classname: FileBlobStorage
       url: config/store2
-      
+
+storage-app-executor:
+  serverUrl: http://localhost:8080
+  serverAuthHeaderName: api-key
+  serverAuthHeaderApiKey: dsfdfghsdmfj

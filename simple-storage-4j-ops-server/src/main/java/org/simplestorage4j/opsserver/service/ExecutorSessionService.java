@@ -24,6 +24,7 @@ import org.simplestorage4j.opscommon.dto.session.ExecutorSessionPollingStateDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionRecentIOStatsDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionUpdatePollingRequestDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import lombok.val;
@@ -41,8 +42,10 @@ public class ExecutorSessionService {
 	@GuardedBy("lock")
 	private final Map<String, ExecutorSessionEntry> sessions = new HashMap<>();
 
-	private long maxPingAliveMillis = 2 * 60 * 1000;
+	@Value("${storage-app-server.sessions.maxPingAliveSeconds:240}")
+	private long maxPingAliveSeconds = 4 * 60;
 
+	@Value("${storage-app-server.sessions.checkSessionAlivePeriodSeconds:30}")
 	private long checkSessionAlivePeriodSeconds = 30;
 
 	private ScheduledExecutorService scheduledExecutor;
@@ -86,22 +89,26 @@ public class ExecutorSessionService {
 
 	private void checkSessionsAlive() {
 		val deadSessions = new ArrayList<ExecutorSessionEntry>();
+		val now = System.currentTimeMillis();
+		val maxPingAliveMillis = maxPingAliveSeconds * 1000;
 		synchronized (lock) {
-			val now = System.currentTimeMillis();
 			for (val session : sessions.values()) {
 				val lastPingMillis = now - session.lastPingAliveTime;
 				if (lastPingMillis > maxPingAliveMillis) {
 					deadSessions.add(session);
 				}
 			}
-			if (!deadSessions.isEmpty()) {
+			if (! deadSessions.isEmpty()) {
+				log.info("detected " + deadSessions.size() + " dead sessions to remove: " + deadSessions);
 				for (val deadSession : deadSessions) {
 					sessions.remove(deadSession.sessionId);
 				}
 			}
 		}
-		for (val deadSession : deadSessions) {
-			onExecutorSessionDead(deadSession);
+		if (! deadSessions.isEmpty()) {
+			for (val deadSession : deadSessions) {
+				onExecutorSessionDead(deadSession);
+			}
 		}
 	}
 
@@ -111,6 +118,7 @@ public class ExecutorSessionService {
 	public void onExecutorStart(ExecutorSessionStartRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
 		val entry = new ExecutorSessionEntry(sessionId, req.host, req.startTime, req.props);
+		entry.lastPingAliveTime = System.currentTimeMillis();
 		synchronized (lock) {
 			val found = sessions.get(sessionId);
 			if (found != null) {

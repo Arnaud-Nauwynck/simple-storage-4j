@@ -9,4 +9,16 @@ storage-app:
       groupId: local
       classname: FileBlobStorage
       url: ../simple-storage-4j-ops-executor/config/store2
-      
+
+storage-app-server:
+  sessions:
+    maxPingAliveSeconds: 240
+    checkSessionAlivePeriodSeconds: 30
+
+  serverAuthHeaderName: api-key
+  authApiKeys:
+    - apiKey: dsfdfghsdmfj
+      principal: test-executor
+      authorities:
+        - executor
+       
