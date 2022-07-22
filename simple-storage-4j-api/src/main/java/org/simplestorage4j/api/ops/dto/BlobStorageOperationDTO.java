@@ -167,16 +167,35 @@ public abstract class BlobStorageOperationDTO implements Serializable {
 
 		public int mockDurationMillis;
 
+		public String srcStorageId;
+		public String destStorageId;
+		public long mockSrcFileLen;
+		public long mockDestFileLen;
+
+		
 	    public MockSleepStorageOperationDTO(long jobId, long taskId, //
-	    		int mockDurationMillis) {
+	    		int mockDurationMillis,
+	    		String srcStorageId,
+	    		String destStorageId,
+	    		long mockSrcFileLen,
+	    		long mockDestFileLen
+	    		) {
 	    	super(jobId, taskId);
 	    	this.mockDurationMillis = mockDurationMillis;
+    		this.srcStorageId = srcStorageId;
+    		this.destStorageId = destStorageId;
+    		this.mockSrcFileLen = mockSrcFileLen;
+    		this.mockDestFileLen = mockDestFileLen;
 	    }
 
 		@Override
 		public String toString() {
 			return "{mock-sleep " //
-					+ mockDurationMillis //
+					+ mockDurationMillis + " ms" //
+					+ ((srcStorageId != null)? " srcStorageId:" + srcStorageId : "")
+					+ ((destStorageId != null)? " destStorageId:" + destStorageId : "")
+					+ ((mockSrcFileLen != 0)? " mockSrcFileLen:" + mockSrcFileLen : "")
+					+ ((mockDestFileLen != 0 && mockDestFileLen != mockSrcFileLen)? " mockDestFileLen:" + mockSrcFileLen : "")
 					+ "}";
 		}
 

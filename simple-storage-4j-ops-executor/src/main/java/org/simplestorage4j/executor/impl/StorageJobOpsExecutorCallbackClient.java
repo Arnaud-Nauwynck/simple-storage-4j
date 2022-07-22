@@ -107,7 +107,7 @@ public class StorageJobOpsExecutorCallbackClient {
 	}
 	
 	public void onExecutorStart() {
-		if (this.sessionId == null) {
+		if (this.sessionId != null) {
 			log.info("session already started!"); // may re-send to relaunched server?
 			return;
 		}

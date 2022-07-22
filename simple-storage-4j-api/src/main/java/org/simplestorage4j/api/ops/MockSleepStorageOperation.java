@@ -1,6 +1,9 @@
 package org.simplestorage4j.api.ops;
 
+import org.simplestorage4j.api.BlobStorageId;
+import org.simplestorage4j.api.iocost.immutable.BlobStorageIOTimeResult;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
+import org.simplestorage4j.api.iocost.immutable.BlobStoragePreEstimateIOCost;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesPreEstimateIOCost;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
@@ -18,14 +21,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MockSleepStorageOperation extends BlobStorageOperation {
 
-	private int mockDurationMillis;
+	private final int mockDurationMillis;
+	private final BlobStorageId srcStorageId;
+	private final BlobStorageId destStorageId;
+	private final long mockSrcFileLen;
+	private final long mockDestFileLen;
 	
 	// ------------------------------------------------------------------------
 	
     public MockSleepStorageOperation(long jobId, long taskId, //
-    		int mockDurationMillis) {
+    		int mockDurationMillis,
+    		BlobStorageId srcStorageId,
+			BlobStorageId destStorageId,
+			long mockSrcFileLen,
+			long mockDestFileLen
+    		) {
         super(jobId, taskId);
         this.mockDurationMillis = mockDurationMillis;
+        this.srcStorageId = srcStorageId;
+        this.destStorageId = destStorageId;
+        this.mockSrcFileLen = mockSrcFileLen;
+        this.mockDestFileLen = mockDestFileLen;
     }
 
     // ------------------------------------------------------------------------
@@ -37,7 +53,14 @@ public class MockSleepStorageOperation extends BlobStorageOperation {
 
     @Override
 	public PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost() {
-		return new PerBlobStoragesPreEstimateIOCost(ImmutableMap.of());
+		val costs = ImmutableMap.<BlobStorageId, BlobStoragePreEstimateIOCost>builder();
+		if (srcStorageId != null) {
+			costs.put(srcStorageId, BlobStoragePreEstimateIOCost.ofIoRead1(mockSrcFileLen));
+		}
+		if (destStorageId != null && (srcStorageId == null || ! srcStorageId.equals(destStorageId))) {
+			costs.put(destStorageId, BlobStoragePreEstimateIOCost.ofIoWrite1(mockDestFileLen));
+		}
+		return new PerBlobStoragesPreEstimateIOCost(costs.build());
 	}
 
 	@Override
@@ -51,22 +74,37 @@ public class MockSleepStorageOperation extends BlobStorageOperation {
 		}
 		
 		val millis = System.currentTimeMillis() - startTime;
+		val ioTimes = ImmutableMap.<BlobStorageId, BlobStorageIOTimeResult>builder();
+		if (srcStorageId != null) {
+			ioTimes.put(srcStorageId, BlobStorageIOTimeResult.ofIoRead1(millis/2, mockSrcFileLen));
+		}
+		if (destStorageId != null && (srcStorageId == null || ! srcStorageId.equals(destStorageId))) {
+			ioTimes.put(destStorageId, BlobStorageIOTimeResult.ofIoWrite1(millis/2, mockDestFileLen));
+		}
 		val res = new BlobStorageOperationResult(jobId, taskId, startTime, millis, //
 				ImmutableList.of(), null, null, //
-				new PerBlobStoragesIOTimeResult(ImmutableMap.of()));
+				new PerBlobStoragesIOTimeResult(ioTimes.build()));
 		ctx.logIncr_mockSleep(this, res, logPrefix -> log.info(logPrefix + "(" + mockDurationMillis + ")"));
 		return res;
 	}
 
 	@Override
     public BlobStorageOperationDTO toDTO() {
-    	return new MockSleepStorageOperationDTO(jobId, taskId, mockDurationMillis);
+    	return new MockSleepStorageOperationDTO(jobId, taskId, //
+    			mockDurationMillis,
+    			((srcStorageId != null)? srcStorageId.id : null),
+    			((destStorageId != null)? destStorageId.id : null),
+    			mockSrcFileLen, mockDestFileLen);
     }
 
 	@Override
     public String toString() {
         return "{mock-sleep " + taskId //
-        		+ " " + mockDurationMillis //
+				+ mockDurationMillis + " ms" //
+				+ ((srcStorageId != null)? " srcStorageId:" + srcStorageId : "")
+				+ ((destStorageId != null)? " destStorageId:" + destStorageId : "")
+				+ ((mockSrcFileLen != 0)? " mockSrcFileLen:" + mockSrcFileLen : "")
+				+ ((mockDestFileLen != 0 && mockDestFileLen != mockSrcFileLen)? " mockDestFileLen:" + mockSrcFileLen : "")
         		+ "}";
     }
 

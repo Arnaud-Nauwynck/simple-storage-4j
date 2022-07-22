@@ -1,5 +1,7 @@
 package org.simplestorage4j.api.util;
 
+import java.util.function.Supplier;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -125,4 +127,21 @@ public class LoggingCounter {
 		}
 	}
 	
+	public void runAndIncr(Runnable task,
+			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
+		val startTime = System.currentTimeMillis();
+		task.run();
+		val millis = System.currentTimeMillis() - startTime;
+		incr(millis, msgPrefixLoggingCallback);
+	}
+
+	public <T> T runAndIncr(Supplier<T> task,
+			MsgPrefixLoggingCallback msgPrefixLoggingCallback) {
+		val startTime = System.currentTimeMillis();
+		val res = task.get();
+		val millis = System.currentTimeMillis() - startTime;
+		incr(millis, msgPrefixLoggingCallback);
+		return res;
+	}
+
 }

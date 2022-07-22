@@ -12,12 +12,14 @@ import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.CopyFileContentStorageOperation;
 import org.simplestorage4j.api.ops.CopyFileStorageOperation;
 import org.simplestorage4j.api.ops.MkdirStorageOperation;
+import org.simplestorage4j.api.ops.MockSleepStorageOperation;
 import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation;
 import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation.SrcStorageZipEntry;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileContentStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.CopyFileStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MkdirStorageOperationDTO;
+import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MockSleepStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.ZipCopyFileStorageOperationDTO;
 import org.simplestorage4j.api.ops.dto.BlobStoragePathDTO;
 import org.simplestorage4j.api.util.BlobStorageUtils;
@@ -74,6 +76,12 @@ public class BlobStorageOperationDtoResolver {
 				zipEntries.add(zipEntry);
 			}
 			res = new ZipCopyFileStorageOperation(jobId, taskId, destStoragePath, srcStorage, zipEntries.build());
+		} else if (dto instanceof MockSleepStorageOperationDTO) {
+			val src = (MockSleepStorageOperationDTO) dto;
+			val srcStorageId = (src.srcStorageId != null)? BlobStorageId.of(src.srcStorageId) : null;
+			val destStorageId = (src.destStorageId != null)? BlobStorageId.of(src.destStorageId) : null;
+			res = new MockSleepStorageOperation(jobId, taskId, //
+					src.mockDurationMillis, srcStorageId, destStorageId, src.mockSrcFileLen, src.mockDestFileLen);
 		} else {
 			throw new IllegalStateException("should not occur: unhandled dto class " + dto.getClass());
 		}

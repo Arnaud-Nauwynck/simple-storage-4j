@@ -16,5 +16,9 @@ public class AddMockOpsToJobQueueRequestDTO implements Serializable {
 	public int mockOpsCount;
 
 	public int mockOpsDurationMillis;
+	public String srcStorageId;
+	public String destStorageId;
+	public long mockSrcFileLen;
+	public long mockDestFileLen;
 
 }

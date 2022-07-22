@@ -88,11 +88,11 @@ public class StorageOpsExecutorCallbackRestController {
 	}
 
 	@PutMapping("/on-ops-finished-poll-nexts")
-	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNext(@RequestBody ExecutorOpsFinishedRequestDTO req) {
+	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNexts(@RequestBody ExecutorOpsFinishedRequestDTO req) {
 		val sessionId = req.sessionId;
 		val opResults = BlobStorageOperationResult.fromDTOs(req.opResults);
 		log.debug("http PUT /on-ops-finished-poll-nexts " + sessionId + " opResults:" + opResults);
-		val res = delegate.onOpsFinishedPollNext(sessionId, opResults, req.pollCount);
+		val res = delegate.onOpsFinishedPollNexts(sessionId, opResults, req.pollCount);
 		return res;
 	}
 

@@ -87,11 +87,11 @@ public class StorageJobOpsExecutorPingAndPoller {
 		val startPollingTime = System.currentTimeMillis();
 
 		long lastPingAliveTime = System.currentTimeMillis();
-		val opResultsToSend = new ArrayList<BlobStorageOperationResult>();
 		
 		try {
 			for(;;) {
 				int pollCount;
+				val opResultsToSend = new ArrayList<BlobStorageOperationResult>();
 				synchronized (lock) {
 					pollCount = doGetCurrOpResultsAndPollCount(opResultsToSend, currPollingSuspended);
 				}
@@ -137,18 +137,30 @@ public class StorageJobOpsExecutorPingAndPoller {
 					continue;
 				}
 				lastPingAliveTime = System.currentTimeMillis();
-
-				val opDtos = opsFinishedPollResp.ops;
-				if (opDtos != null) {
-					val ops = blobStorageOperationDtoResolver.dtosToOps(opDtos);
-					// *** the biggy: submit op to execute to thread pool ***
-					submitOpTasks(ops);
-				}
-
 				if (opsFinishedPollResp.pollingResp != null) {
 					boolean stopRequested = handleUpdatePolling(opsFinishedPollResp.pollingResp);
 					if (stopRequested) {
 						break;
+					}
+				}
+
+				val opDtos = opsFinishedPollResp.ops;
+				if (opDtos != null && ! opDtos.isEmpty()) {
+					val ops = blobStorageOperationDtoResolver.dtosToOps(opDtos);
+					// *** the biggy: submit op to execute to thread pool ***
+					submitOpTasks(ops);
+				} else {
+					// nothing polled => sleep until ping alive needed
+					val now = System.currentTimeMillis();
+					val nextPingAliveTime = lastPingAliveTime + maxPingAliveMillis;
+					val waitPingAliveMillis = nextPingAliveTime - now;
+					if (waitPingAliveMillis > 0) {
+						try {
+							synchronized (lock) {
+								lock.wait(waitPingAliveMillis);
+							}
+						} catch (InterruptedException e) {
+						}
 					}
 				}
 

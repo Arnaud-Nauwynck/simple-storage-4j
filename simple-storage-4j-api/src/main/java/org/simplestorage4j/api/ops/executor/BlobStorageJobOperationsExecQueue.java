@@ -178,6 +178,7 @@ public class BlobStorageJobOperationsExecQueue {
 			if (op == null) {
 				// throw new IllegalArgumentException("running op not found for " + taskId);
 				log.error("running op not found for " + taskId + " .. ignore onOpExecutedSuccess");
+				return;
 			}
 			this.doneOpsCount++;
 			if (keepDoneOps) {

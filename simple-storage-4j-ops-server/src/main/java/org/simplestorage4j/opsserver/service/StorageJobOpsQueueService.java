@@ -8,6 +8,7 @@ import java.util.Map;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.MockSleepStorageOperation;
@@ -139,12 +140,20 @@ public class StorageJobOpsQueueService {
 		synchronized(lock) {
 			val jobId = req.jobId;
 			val entry = jobQueueById.get(jobId);
-			boolean hasRemainOpsBefore = entry.queue.hasRemainOps(); 
-			val mockOps = new ArrayList<BlobStorageOperation>();
+			val hasRemainOpsBefore = entry.queue.hasRemainOps(); 
+			int mockOpsCount = req.mockOpsCount;
+			val mockOps = new ArrayList<BlobStorageOperation>(mockOpsCount);
 			val mockDurationMillis = req.mockOpsDurationMillis;
-			for(int i = 0; i < req.mockOpsCount; i++) {
+			val srcStorageId = (req.srcStorageId != null)? BlobStorageId.of(req.srcStorageId) : null;
+			val destStorageId = (req.destStorageId != null)? BlobStorageId.of(req.destStorageId) : null;
+			val mockSrcFileLen = req.mockSrcFileLen;
+			val mockDestFileLen = req.mockDestFileLen;
+			for(int i = 0; i < mockOpsCount; i++) {
 				val taskId = entry.queue.newTaskId();
-				val mockOp = new MockSleepStorageOperation(jobId, taskId, mockDurationMillis);
+				val mockOp = new MockSleepStorageOperation(jobId, taskId, 
+						mockDurationMillis, srcStorageId, destStorageId,
+						mockSrcFileLen, mockDestFileLen
+						);
 				mockOps.add(mockOp);
 			}
 			entry.queue.addOps(mockOps);
