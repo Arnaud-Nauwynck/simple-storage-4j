@@ -19,4 +19,12 @@ public class OpsExecutorAppParams {
 	private String serverAuthHeaderApiKey;
 
 	private Map<String,String> displayProps;
+	
+	private int opsThreadCount = 10;
+	private int opsPollAheadCount = 5;
+	private int opSubTasksThreadCount = 20;
+	private int opLargeFileRangeThreadCount = 10;
+	
+	private int maxPingAliveSeconds = 30;
+	
 }

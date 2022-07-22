@@ -10,6 +10,7 @@ import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseD
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpsResponseDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionUpdatePollingDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -38,8 +39,11 @@ public class StorageOpsExecutorCallbackService {
 		executorSessionService.onExecutorStop(req);
 	}
 
-	public void onExecutorPingAlive(ExecutorSessionPingAliveRequestDTO req) {
-		executorSessionService.onExecutorPingAlive(req);
+	public ExecutorSessionUpdatePollingDTO onExecutorPingAlive(ExecutorSessionPingAliveRequestDTO req) {
+		val sessionId = req.sessionId;
+		val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
+		val pollingRespDto = session.toPollingRespDTO();
+		return pollingRespDto;
 	}
 
 	// ------------------------------------------------------------------------

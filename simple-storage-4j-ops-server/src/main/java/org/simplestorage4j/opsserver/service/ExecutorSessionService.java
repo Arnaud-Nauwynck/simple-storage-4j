@@ -15,7 +15,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.util.BlobStorageUtils;
-import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionInfoDTO;
@@ -153,11 +152,6 @@ public class ExecutorSessionService {
 					+ " polled tasks, re-put to queues");
 			storageOpsService.onExecutorStop_reputPolledTasks(polledJobTasks);
 		}
-	}
-
-	public void onExecutorPingAlive(ExecutorSessionPingAliveRequestDTO req) {
-		val sessionId = Objects.requireNonNull(req.sessionId);
-		updateOrCreateSessionAlive(sessionId);
 	}
 
 	public ExecutorSessionEntry updateOrCreateSessionAlive(String sessionId) {

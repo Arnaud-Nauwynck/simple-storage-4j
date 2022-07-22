@@ -11,6 +11,7 @@ import org.simplestorage4j.api.BlobStorageGroupId;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStorageRepository;
 import org.simplestorage4j.api.FileBlobStorage;
+import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
 import org.simplestorage4j.api.util.BlobStorageUtils;
 import org.simplestorage4j.azure.datalake.AdlsGen2BlobStorage;
 import org.simplestorage4j.azure.datalake.configuration.AzureStorageFactoryUtils;
@@ -47,6 +48,11 @@ public class CommonStorageOpsAppConfiguration {
 		return new BlobStorageRepository(blobStorages); 
 	}
 
+	@Bean
+	public BlobStorageOperationDtoResolver blobStorageOperationDtoResolver(BlobStorageRepository blobStorageRepository) {
+		return new BlobStorageOperationDtoResolver(blobStorageRepository);
+	}
+	
 	private BlobStorage createBlobStorage(BlobStorageParams params) {
 		val className = params.getClassname();
 		val idText = Objects.requireNonNull(params.getId());

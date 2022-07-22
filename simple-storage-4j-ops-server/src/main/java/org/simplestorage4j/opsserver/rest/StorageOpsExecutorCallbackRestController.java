@@ -11,6 +11,7 @@ import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseD
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpsResponseDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionUpdatePollingDTO;
 import org.simplestorage4j.opsserver.service.StorageOpsExecutorCallbackService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -53,9 +54,10 @@ public class StorageOpsExecutorCallbackRestController {
 	}
 
 	@PutMapping("/onExecutorPingAlive")
-	public void onExecutorPingAlive(@RequestBody ExecutorSessionPingAliveRequestDTO req) {
+	public ExecutorSessionUpdatePollingDTO onExecutorPingAlive(@RequestBody ExecutorSessionPingAliveRequestDTO req) {
 		log.debug("http PUT /onExecutorPingAlive " + req.sessionId);
-		delegate.onExecutorPingAlive(req);
+		val res = delegate.onExecutorPingAlive(req);
+		return res;
 	}
 
 	// ------------------------------------------------------------------------

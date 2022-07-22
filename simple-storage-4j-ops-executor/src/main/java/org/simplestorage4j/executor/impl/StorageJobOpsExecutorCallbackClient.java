@@ -14,8 +14,10 @@ import org.simplestorage4j.opscommon.dto.executor.ExecutorOpsFinishedRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPingAliveRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpResponseDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionPollOpsResponseDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStartRequestDTO;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionStopRequestDTO;
+import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionUpdatePollingDTO;
 
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
@@ -57,8 +59,6 @@ public class StorageJobOpsExecutorCallbackClient {
 			log.error("should not occur: failed to get local hostname.. using default", ex);
 			this.hostname = "localhost?";
 		}
-		this.sessionId = hostname + ":" + System.currentTimeMillis();
-		this.startTime = System.currentTimeMillis();
 		this.props = props;
 
 		Retrofit retrofit = new Retrofit.Builder()
@@ -84,7 +84,7 @@ public class StorageJobOpsExecutorCallbackClient {
 		public Call<Void> onExecutorStop(@Body ExecutorSessionStopRequestDTO req);
 
 		@PUT(BASE_PATH + "/onExecutorPingAlive")
-		public Call<Void> onExecutorPingAlive(@Body ExecutorSessionPingAliveRequestDTO req);
+		public Call<ExecutorSessionUpdatePollingDTO> onExecutorPingAlive(@Body ExecutorSessionPingAliveRequestDTO req);
 
 		@PUT(BASE_PATH + "/poll-op")
 		public Call<ExecutorSessionPollOpResponseDTO> pollOp(@Body ExecutorSessionPollOpRequestDTO req);
@@ -96,27 +96,43 @@ public class StorageJobOpsExecutorCallbackClient {
 		public Call<ExecutorSessionPollOpResponseDTO> onOpFinishedPollNext(@Body ExecutorOpFinishedPollNextRequestDTO req);
 
 		@PUT(BASE_PATH + "/on-ops-finished-poll-nexts")
-		public Call<ExecutorSessionPollOpResponseDTO> onOpsFinishedPollNext(@Body ExecutorOpsFinishedRequestDTO req);
+		public Call<ExecutorSessionPollOpsResponseDTO> onOpsFinishedPollNexts(@Body ExecutorOpsFinishedRequestDTO req);
 
 	}
 
 	// ------------------------------------------------------------------------
 
+	public boolean isSessionStarted() {
+		return this.sessionId != null;
+	}
+	
 	public void onExecutorStart() {
+		if (this.sessionId == null) {
+			log.info("session already started!"); // may re-send to relaunched server?
+			return;
+		}
+		this.startTime = System.currentTimeMillis();
+		val sessionId = hostname + ":" + startTime;
+
 		val req = new ExecutorSessionStartRequestDTO(sessionId, hostname, startTime, props);
 		execHttp(loggingCounter_call, "PUT", "onExecutorStart", "", //
 				delegate.onExecutorStart(req));
+		this.sessionId = sessionId;
 	}
 
 	public void onExecutorStop(String stopReason) {
-		val req = new ExecutorSessionStopRequestDTO(sessionId, stopReason);
-		execHttp(loggingCounter_call, "PUT", "onExecutorStop", "", //
-				delegate.onExecutorStop(req));
+		val sessionId = this.sessionId;
+		if (sessionId != null) {
+			val req = new ExecutorSessionStopRequestDTO(sessionId, stopReason);
+			execHttp(loggingCounter_call, "PUT", "onExecutorStop", "", //
+					delegate.onExecutorStop(req));
+			this.sessionId = null;
+		}
 	}
 
-	public void onExecutorPingAlive() {
+	public ExecutorSessionUpdatePollingDTO onExecutorPingAlive() {
 		val req = new ExecutorSessionPingAliveRequestDTO(sessionId);
-		execHttp(loggingCounter_pingAlive, "PUT", "onExecutorPingAlive", "", //
+		return execHttp(loggingCounter_pingAlive, "PUT", "onExecutorPingAlive", "", //
 				delegate.onExecutorPingAlive(req));
 	}
 
@@ -140,11 +156,11 @@ public class StorageJobOpsExecutorCallbackClient {
 				delegate.onOpFinishedPollNext(req));
 	}
 
-	public ExecutorSessionPollOpResponseDTO onOpsFinishedPollNexts(List<BlobStorageOperationResult> opResults, int pollCount) {
+	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNexts(List<BlobStorageOperationResult> opResults, int pollCount) {
 		val opResultDtos = BlobStorageOperationResult.toDtos(opResults);
 		val req = new ExecutorOpsFinishedRequestDTO(sessionId, opResultDtos, pollCount);
 		return execHttp(loggingCounter_onOpsFinishedPollNexts, "PUT", "onOpsFinishedPollNext", "", //
-				delegate.onOpsFinishedPollNext(req));
+				delegate.onOpsFinishedPollNexts(req));
 	}
 
 	// ------------------------------------------------------------------------

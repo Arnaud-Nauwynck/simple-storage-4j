@@ -14,7 +14,10 @@ public class BlobStorageOperationExecContext {
 
 	@Getter
 	private final ExecutorService subTasksExecutor;
-	
+
+	@Getter
+	private final ExecutorService largeFileRangeTasksExecutor;
+
 	@Getter
 	private final BlobStorageOperationsIOLoggingCounter loggingCounter_mkdir;
 
@@ -30,14 +33,16 @@ public class BlobStorageOperationExecContext {
 	
 	// ------------------------------------------------------------------------
 
-	public BlobStorageOperationExecContext(ExecutorService subTasksExecutor) {
-		this(subTasksExecutor, "","", new LoggingCounterParams());
+	public BlobStorageOperationExecContext(ExecutorService subTasksExecutor, ExecutorService largeFileRangeTasksExecutor) {
+		this(subTasksExecutor, largeFileRangeTasksExecutor, "","", new LoggingCounterParams());
 	}
 
 	public BlobStorageOperationExecContext(ExecutorService subTasksExecutor,
+			ExecutorService largeFileRangeTasksExecutor,
 			String msgPrefix, String msgSuffix,
 			LoggingCounterParams logParams) {
 		this.subTasksExecutor = subTasksExecutor;
+		this.largeFileRangeTasksExecutor = largeFileRangeTasksExecutor;
 		this.loggingCounter_mkdir = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "mkdir" + msgSuffix, logParams);
 		this.loggingCounter_copyFile = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFile" + msgSuffix, logParams);
 		this.loggingCounter_copyFileContent = new BlobStorageOperationsIOLoggingCounter(msgPrefix + "copyFileContent" + msgSuffix, logParams);
@@ -48,6 +53,10 @@ public class BlobStorageOperationExecContext {
 	
 	public <T> Future<T> submitSubTask(Callable<T> task) {
 		return subTasksExecutor.submit(task);
+	}
+
+	public <T> Future<T> submitLargeFileRangeTask(Callable<T> task) {
+		return largeFileRangeTasksExecutor.submit(task);
 	}
 
 	public void logIncr_mkdir(
