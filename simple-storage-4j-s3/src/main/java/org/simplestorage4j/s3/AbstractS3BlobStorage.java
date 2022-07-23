@@ -73,19 +73,6 @@ public abstract class AbstractS3BlobStorage extends BlobStorage {
     }
 
     @Override
-    public long fileLen(String filePath) {
-        val s3ObjMetadata = s3ObjectMetadata(filePath);
-        return s3ObjMetadata.getContentLength();
-    }
-
-    @Override
-    public long lastModifiedTime(String filePath) {
-        val s3ObjMetadata = s3ObjectMetadata(filePath);
-        Date lastModified = s3ObjMetadata.getLastModified();
-        return (lastModified != null)? lastModified.getTime() : 0;
-    }
-
-    @Override
     public List<BlobStoreFileInfo> list(String filePath) {
         val s3 = pathToS3(filePath);
         ListObjectsAndCommonPrefixes tmpres = s3Client.listObjectsV2_fetchAll(s3.bucketName, s3.key, "/");

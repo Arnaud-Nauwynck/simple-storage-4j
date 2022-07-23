@@ -71,7 +71,7 @@ public class CopyFileStorageOperation extends BlobStorageOperation {
 			} else {
 				// using read by range futures
 				val blockContentFutures = BlobStorageIOUtils.asyncReadFileByBlocksWithRetry(
-						srcStoragePath, srcFileLen, inputIOCounter, ctx.getSubTasksExecutor());
+						srcStoragePath, srcFileLen, inputIOCounter, ctx.getLargeFileRangeTasksExecutor());
 				BlobStorageIOUtils.writeFileByBlockFutures(destStoragePath, outputIOCounter, blockContentFutures);
 			}
 		}

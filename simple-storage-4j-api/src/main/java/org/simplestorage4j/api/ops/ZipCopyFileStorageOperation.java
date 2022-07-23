@@ -125,9 +125,10 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		val outputIOCounter = new BlobStorageIOTimeCounter();
 
 		val zipEntryContentFutures = new ArrayList<Future<ZipEntryContent>>();
+		val subTaskExecutor = ctx.getSubTasksExecutor();
 		for(val srcEntry: srcEntries) {
 			// *** async read ***
-			val zipEntryContentFuture = ctx.submitSubTask(() -> readSrcEntry(ctx, srcEntry, inputIOCounter));
+			val zipEntryContentFuture = subTaskExecutor.submit(() -> readSrcEntry(ctx, srcEntry, inputIOCounter));
 			zipEntryContentFutures.add(zipEntryContentFuture);
 		}
 
@@ -202,7 +203,8 @@ public class ZipCopyFileStorageOperation extends BlobStorageOperation {
 		} else {
 			// for big file, async read by ranges (with retry per range)... return ordered future list 
 			srcContentBlockFutures = BlobStorageIOUtils.asyncReadFileByBlocksWithRetry(
-					srcStorage, srcEntry.srcStoragePath, srcEntry.srcFileLen, inputIOCounter, ctx.getSubTasksExecutor());
+					srcStorage, srcEntry.srcStoragePath, srcEntry.srcFileLen, inputIOCounter, 
+					ctx.getLargeFileRangeTasksExecutor());
 		}
 		return new ZipEntryContent(srcEntry, srcContentBlockFutures);
 	}

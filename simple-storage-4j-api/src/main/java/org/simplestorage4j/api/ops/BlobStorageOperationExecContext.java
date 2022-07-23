@@ -54,14 +54,6 @@ public class BlobStorageOperationExecContext {
 	}
 	
 	// ------------------------------------------------------------------------
-	
-	public <T> Future<T> submitSubTask(Callable<T> task) {
-		return subTasksExecutor.submit(task);
-	}
-
-	public <T> Future<T> submitLargeFileRangeTask(Callable<T> task) {
-		return largeFileRangeTasksExecutor.submit(task);
-	}
 
 	public void logIncr_mkdir(
 			MkdirStorageOperation op,

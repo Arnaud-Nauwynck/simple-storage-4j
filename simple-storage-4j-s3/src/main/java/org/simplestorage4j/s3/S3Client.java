@@ -1,6 +1,5 @@
 package org.simplestorage4j.s3;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -348,21 +347,33 @@ public class S3Client {
 			req.setSdkRequestTimeout(requestTimeoutMillis);
 			S3Object s3Object = this.s3Client.getObject(req);
 
-			// TODO rewrite avodi intermediate ByteArrayOutputStream
-			val resBuffer = new ByteArrayOutputStream(20*1024);
+			ObjectMetadata s3ObjMetadata = s3Object.getObjectMetadata();
+			long lenLong = s3ObjMetadata.getContentLength();
+			if (lenLong > Integer.MAX_VALUE) {
+				throw new IllegalArgumentException("contentLength: " + lenLong + " > max int value");
+			}
+			int len = (int) lenLong;
+			val res = new byte[len];
+			int remainLen = len;
 			try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent()) {
-				byte[] readBuf = new byte[DEFAULT_BUFFER_READ_SIZE];
+				int currPos = 0;
 				int readLen;
-				while ((readLen = s3ObjectInputStream.read(readBuf)) > 0) {
-					resBuffer.write(readBuf, 0, readLen);
+				while ((readLen = s3ObjectInputStream.read(res, currPos, remainLen)) != -1) {
+					currPos += readLen;
+					remainLen -= readLen;
 				}
 			} catch (IOException ex) {
 				throw new WrappedS3ClientException("Failed S3 getObjectBytes(" + bucketName + ", " + key + ")", ex, displayName, bucketName, key);
 			}
 
+			if (remainLen != 0) {
+				throw new IllegalStateException("Failed getObjectContent(" + bucketName + ", " + key + ")"
+						+ " remainLen:" + remainLen + ", expected metadataLength:" + len);
+			}
+
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_readAllBytes.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key));
-			return resBuffer.toByteArray();
+			return res;
 		} catch(Exception ex) {
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_readAllBytes_Failed.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key + ") Failed " + ex.getMessage()));
@@ -418,14 +429,15 @@ public class S3Client {
 			GetObjectRequest req = new GetObjectRequest(bucketName, key);
 			req.setRange(start, start+len-1);
 			req.setSdkRequestTimeout(requestTimeoutMillis);
+			int remainLen = 0;
 			for(int retry = 0; retry < maxRetry; retry++) {
 				try {
 					S3Object s3Object = s3Client.getObject(req);
 					try (S3ObjectInputStream s3ObjectInputStream = s3Object.getObjectContent()) {
 						int currPos = resPos;
-						int remainLen = len;
+						remainLen = len;
 						int readLen;
-						while ((readLen = s3ObjectInputStream.read(resBuffer, currPos, remainLen)) > 0) {
+						while ((readLen = s3ObjectInputStream.read(resBuffer, currPos, remainLen)) != -1) {
 							currPos += readLen;
 							remainLen -= readLen;
 						}
@@ -442,12 +454,16 @@ public class S3Client {
 					}
 				}
 			}
+			if (remainLen != 0) {
+				throw new IllegalStateException("Failed getObjectContent_range(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ")"
+						+ " remainLen:" + remainLen);
+			}
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_range.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ")"));
 		} catch(Exception ex) {
 			long millis = System.currentTimeMillis() - startTime;
 			counter_getObjectContent_range_Failed.incr(millis, logPrefix -> log.info(logPrefix + "(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ") Failed " + ex.getMessage()));
-			throw new WrappedS3ClientException("Failed getObjectContent_stream(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ")", ex, displayName, bucketName, key);
+			throw new WrappedS3ClientException("Failed getObjectContent_range(" + bucketName + ", " + key + ", start:" + start + ", len:" + len + ")", ex, displayName, bucketName, key);
 		}
 	}
 }

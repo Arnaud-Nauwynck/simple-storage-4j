@@ -78,12 +78,6 @@ public class AdlsGen2BlobStorage extends BlobStorage {
     }
 
     @Override
-    public boolean isDirectory(String relativeFilePath) {
-        val props = azQueryPathProperties(relativeFilePath);
-        return props.isDirectory();
-    }
-
-    @Override
     public long fileLen(String relativeFilePath) {
         val props = azQueryPathProperties(relativeFilePath);
         return props.getFileSize();
@@ -170,7 +164,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
             }
             return new AzFileExclusiveOutputStream(fileClient, 0);
         } else {
-            // TODO TOCHECK
+            // TOCHECK
             if (! existed) {
                 fileClient.create();
             } else {
@@ -301,7 +295,7 @@ public class AdlsGen2BlobStorage extends BlobStorage {
         if (relativePath.isEmpty() || relativePath.equals("/")) {
             return baseDirClient;
         }
-        // TODO use directly dirClient.getSubdirectoryClient(relativePath) ??
+        // TOCHECK use directly dirClient.getSubdirectoryClient(relativePath) ??
         String[] pathElts = relativePath.split("/");
         val res = chilDirClientUpTo(baseDirClient, pathElts, pathElts.length);
         return res;

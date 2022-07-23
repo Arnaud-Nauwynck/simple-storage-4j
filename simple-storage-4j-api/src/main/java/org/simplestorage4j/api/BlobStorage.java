@@ -35,15 +35,23 @@ public abstract class BlobStorage {
 
 	public abstract boolean exists(String filePath);
 
-	// TODO use fileInfo()
-	public abstract boolean isDirectory(String filePath);
+	/** helper for <code>pathInfo(filePath).isDir</code> */
+	public boolean isDirectory(String filePath) {
+		val info = pathInfo(filePath);
+		return info.isDir;
+	}
 
-	// TODO use fileInfo()
-	public abstract long fileLen(String filePath);
+	/** helper for <code>pathInfo(filePath).fileLength</code> */
+	public long fileLen(String filePath) {
+		val info = pathInfo(filePath);
+		return info.fileLength;
+	}
 	
-	// TODO use fileInfo()
-	public abstract long lastModifiedTime(String filePath);
-
+	/** helper for <code>pathInfo(filePath).lastModifTime</code> */
+	public long lastModifiedTime(String filePath) {
+		val info = pathInfo(filePath);
+		return info.lastModifTime;
+	}
 
 	public abstract void mkdirs(String filePath);
 
