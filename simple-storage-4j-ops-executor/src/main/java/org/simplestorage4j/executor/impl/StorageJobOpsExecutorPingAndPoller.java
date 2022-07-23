@@ -150,16 +150,23 @@ public class StorageJobOpsExecutorPingAndPoller {
 					// *** the biggy: submit op to execute to thread pool ***
 					submitOpTasks(ops);
 				} else {
-					// nothing polled => sleep until ping alive needed
-					val now = System.currentTimeMillis();
-					val nextPingAliveTime = lastPingAliveTime + maxPingAliveMillis;
-					val waitPingAliveMillis = nextPingAliveTime - now;
-					if (waitPingAliveMillis > 0) {
-						try {
-							synchronized (lock) {
-								lock.wait(waitPingAliveMillis);
+					// nothing polled
+					boolean opResultsEmpty;
+					synchronized(lock) {
+						opResultsEmpty = currOpResults.isEmpty();
+					}
+					if (opResultsEmpty) {
+						// nothing polled and no more results to send => sleep until ping alive needed
+						val now = System.currentTimeMillis();
+						val nextPingAliveTime = lastPingAliveTime + maxPingAliveMillis;
+						val waitPingAliveMillis = nextPingAliveTime - now;
+						if (waitPingAliveMillis > 0) {
+							try {
+								synchronized (lock) {
+									lock.wait(waitPingAliveMillis);
+								}
+							} catch (InterruptedException e) {
 							}
-						} catch (InterruptedException e) {
 						}
 					}
 				}
