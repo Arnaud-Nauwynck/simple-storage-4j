@@ -226,14 +226,15 @@ public class StorageJobOpsExecutorPingAndPoller {
 	}
 
 	private ExecutorSessionPollOpsResponseDTO safeOpsFinishedPollNexts(
-			List<BlobStorageOperationResult> opResults, int pollCount
+			List<BlobStorageOperationResult> opResultsToSend, int pollCount
 			) {
 		try {
-			val res = callbackClient.onOpsFinishedPollNexts(opResults, pollCount);
+			val res = callbackClient.onOpsFinishedPollNexts(opResultsToSend, pollCount);
+			opResultsToSend.clear();
 			return res;
 		} catch(Exception ex) {
 			synchronized (lock) {
-				currOpResults.addAll(opResults);
+				currOpResults.addAll(opResultsToSend);
 			}
 			log.warn("Failed onOpsFinishedPollNexts ..ignore, no rethrow (retry later) " + ex.getMessage());
 			return null;

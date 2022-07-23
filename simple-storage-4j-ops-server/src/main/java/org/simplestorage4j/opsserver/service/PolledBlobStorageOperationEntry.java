@@ -7,8 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PolledBlobStorageOperationEntry {
 	public final ExecutorSessionEntry owner;
-	public final long jobId;
 	public final BlobStorageOperation op;
-	public final long polledStartTime;
+	public final long polledTime;
 	
 }

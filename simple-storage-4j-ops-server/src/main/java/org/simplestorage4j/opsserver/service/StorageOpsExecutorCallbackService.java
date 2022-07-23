@@ -31,48 +31,52 @@ public class StorageOpsExecutorCallbackService {
 
 	@Autowired
 	private StorageJobOpsQueueService storageOpsService;
-	
-	private final LoggingCounter loggingCounter_call = new LoggingCounter("executorCallback call", new LoggingCounterParams(1, 0));
-	private final LoggingCounter loggingCounter_startSession = new LoggingCounter("executorCallback startSession", new LoggingCounterParams(1, 0));
-	private final LoggingCounter loggingCounter_stopSession = new LoggingCounter("executorCallback stopSession", new LoggingCounterParams(1, 0));
-	private final LoggingCounter loggingCounter_pingAlive = new LoggingCounter("executorCallback pingAlive", new LoggingCounterParams(1000, 600_000));
-	private final LoggingCounter loggingCounter_pollOp = new LoggingCounter("executorCallback pollOp", new LoggingCounterParams(1000, 600_000));
-	private final LoggingCounter loggingCounter_onOpsFinished = new LoggingCounter("executorCallback onOpsFinished", new LoggingCounterParams(1000, 600_000));
-	private final LoggingCounter loggingCounter_onOpFinishedPollNext = new LoggingCounter("executorCallback onOpFinishedPollNext", new LoggingCounterParams(1000, 600_000));
-	private final LoggingCounter loggingCounter_onOpsFinishedPollNexts = new LoggingCounter("executorCallback onOpsFinishedPollNexts", new LoggingCounterParams(1000, 600_000));
+
+	private final LoggingCounter loggingCounter_startSession = new LoggingCounter( //
+			"executorCallback startSession", new LoggingCounterParams(1, 0));
+	private final LoggingCounter loggingCounter_stopSession = new LoggingCounter( //
+			"executorCallback stopSession", new LoggingCounterParams(1, 0));
+	private final LoggingCounter loggingCounter_pingAlive = new LoggingCounter( //
+			"executorCallback pingAlive", new LoggingCounterParams(1000, 600_000));
+	private final LoggingCounter loggingCounter_pollOp = new LoggingCounter( //
+			"executorCallback pollOp", new LoggingCounterParams(1000, 600_000));
+	private final LoggingCounter loggingCounter_onOpsFinished = new LoggingCounter( //
+			"executorCallback onOpsFinished", new LoggingCounterParams(1000, 600_000));
+	private final LoggingCounter loggingCounter_onOpFinishedPollNext = new LoggingCounter( //
+			"executorCallback onOpFinishedPollNext", new LoggingCounterParams(1000, 600_000));
+	private final LoggingCounter loggingCounter_onOpsFinishedPollNexts = new LoggingCounter( //
+			"executorCallback onOpsFinishedPollNexts", new LoggingCounterParams(1000, 600_000));
 
 	// Executor Session lifecycle: start / ping-alive / stop
 	// ------------------------------------------------------------------------
 
 	public void onExecutorStart(ExecutorSessionStartRequestDTO req) {
-		loggingCounter_startSession.runAndIncr(
-				() -> executorSessionService.onExecutorStart(req),
+		loggingCounter_startSession.runAndIncr(() -> executorSessionService.onExecutorStart(req),
 				logPrefix -> log.info(logPrefix + " " + req.sessionId));
 	}
-	
+
 	public void onExecutorStop(ExecutorSessionStopRequestDTO req) {
-		loggingCounter_stopSession.runAndIncr(
-				() -> executorSessionService.onExecutorStop(req),
+		loggingCounter_stopSession.runAndIncr(() -> executorSessionService.onExecutorStop(req),
 				logPrefix -> log.info(logPrefix + " " + req.sessionId));
 	}
 
 	public ExecutorSessionUpdatePollingDTO onExecutorPingAlive(ExecutorSessionPingAliveRequestDTO req) {
 		return loggingCounter_pingAlive.runAndIncr(() -> {
-				val sessionId = req.sessionId;
-				val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
-				val pollingRespDto = session.toPollingRespDTO();
-				return pollingRespDto;
+			val sessionId = req.sessionId;
+			val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
+			val pollingRespDto = session.toPollingRespDTO();
+			return pollingRespDto;
 		}, logPrefix -> log.info(logPrefix + " " + req.sessionId));
 	}
 
 	// ------------------------------------------------------------------------
-	
+
 	public ExecutorSessionPollOpResponseDTO pollOp(ExecutorSessionPollOpRequestDTO req) {
 		return loggingCounter_pollOp.runAndIncr(() -> {
 			val sessionId = req.sessionId;
 			val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
-			val op = storageOpsService.pollOp(sessionId);
-			val opDto = (op != null)? op.toDTO() : null;
+			val op = storageOpsService.pollOp(session);
+			val opDto = (op != null) ? op.toDTO() : null;
 			val pollingRespDto = session.toPollingRespDTO();
 			return new ExecutorSessionPollOpResponseDTO(opDto, pollingRespDto);
 		}, logPrefix -> log.info(logPrefix + " " + req.sessionId));
@@ -82,28 +86,30 @@ public class StorageOpsExecutorCallbackService {
 		loggingCounter_onOpsFinished.runAndIncr(() -> {
 			val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
 			session.incrIOStats(opResults);
-			storageOpsService.onOpsFinished(opResults);
+			storageOpsService.onOpsFinished(session, opResults);
 		}, logPrefix -> log.info(logPrefix + " " + sessionId + " opResults:" + opResults.size()));
 	}
 
-	public ExecutorSessionPollOpResponseDTO onOpFinishedPollNext(String sessionId, BlobStorageOperationResult opResult) {
+	public ExecutorSessionPollOpResponseDTO onOpFinishedPollNext(String sessionId,
+			BlobStorageOperationResult opResult) {
 		return loggingCounter_onOpFinishedPollNext.runAndIncr(() -> {
 			val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
 			session.incrIOStats(opResult);
-			storageOpsService.onOpFinished(opResult);
-			val op = storageOpsService.pollOp(sessionId);
-			val opDto = (op != null)? op.toDTO() : null;
+			storageOpsService.onOpFinished(session, opResult);
+			val op = storageOpsService.pollOp(session);
+			val opDto = (op != null) ? op.toDTO() : null;
 			val pollingRespDto = session.toPollingRespDTO();
 			return new ExecutorSessionPollOpResponseDTO(opDto, pollingRespDto);
 		}, logPrefix -> log.info(logPrefix + " " + sessionId));
 	}
 
-	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNexts(String sessionId, List<BlobStorageOperationResult> opResults, int pollingCount) {
+	public ExecutorSessionPollOpsResponseDTO onOpsFinishedPollNexts(String sessionId,
+			List<BlobStorageOperationResult> opResults, int pollingCount) {
 		return loggingCounter_onOpsFinishedPollNexts.runAndIncr(() -> {
 			val session = executorSessionService.updateOrCreateSessionAlive(sessionId);
 			session.incrIOStats(opResults);
-			storageOpsService.onOpsFinished(opResults);
-			val ops = storageOpsService.pollOps(sessionId, pollingCount);
+			storageOpsService.onOpsFinished(session, opResults);
+			val ops = storageOpsService.pollOps(session, pollingCount);
 			val opDtos = BlobStorageOperation.toDTOs(ops);
 			val pollingRespDto = session.toPollingRespDTO();
 			return new ExecutorSessionPollOpsResponseDTO(opDtos, pollingRespDto);
@@ -111,6 +117,5 @@ public class StorageOpsExecutorCallbackService {
 	}
 
 	// ------------------------------------------------------------------------
-	
-	
+
 }

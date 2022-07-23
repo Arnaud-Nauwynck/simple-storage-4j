@@ -206,7 +206,7 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	public BlobStorageOperation pollOp(String sessionId) {
+	public BlobStorageOperation pollOp(ExecutorSessionEntry session) {
 		BlobStorageOperation res = null;
 		synchronized(lock) {
 			int len = activeJobQueues.size();
@@ -221,6 +221,7 @@ public class StorageJobOpsQueueService {
 				val entry = activeJobQueues.get(jobQueueRoundRobinIndex);
 				res = entry.queue.poll();
 				if (res != null) {
+					session.addPolledOp(res);
 					if (! entry.queue.hasRemainOps()) {
 						activeJobQueues.remove(entry);
 						len = activeJobQueues.size();
@@ -232,10 +233,10 @@ public class StorageJobOpsQueueService {
 		return res;
 	}
 
-	public List<BlobStorageOperation> pollOps(String sessionId, int count) {
+	public List<BlobStorageOperation> pollOps(ExecutorSessionEntry session, int count) {
 		val res = new ArrayList<BlobStorageOperation>();
 		for(int i = 0; i < count; i++) {
-			val op = pollOp(sessionId);
+			val op = pollOp(session);
 			if (op == null) {
 				break;
 			}
@@ -244,19 +245,21 @@ public class StorageJobOpsQueueService {
 		return res;
 	}
 
-
 	public void onExecutorStop_reputPolledTasks(
+			ExecutorSessionEntry session, 
 			List<PolledBlobStorageOperationEntry> polledJobTasks) {
 		synchronized(lock) {
 			for(val polled: polledJobTasks) {
-				val jobId = polled.jobId;
+				val op = polled.op;
+				val jobId = op.jobId;
 				val entry = jobQueueById.get(jobId);
 				if (entry == null) {
 					log.warn("jobId " + jobId + " not found to reput polled task? ..ignore");
 					continue;
 				}
+				session.removePolledOp(op.toId());
 				val hasRemainOpsBefore = entry.queue.hasRemainOps();
-				entry.queue.onOpRequeue(polled.op);
+				entry.queue.onOpRequeue(op);
 				if (entry.isPollingActive() && ! hasRemainOpsBefore) {
 					activeJobQueues.add(entry);
 				}
@@ -264,28 +267,41 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	public void onOpsFinished(Collection<BlobStorageOperationResult> opResults) {
+	public void onOpsFinished(ExecutorSessionEntry session, Collection<BlobStorageOperationResult> opResults) {
 		synchronized(lock) {
+			long prevJobId = 0;
+			JobQueueEntry prevJobEntry = null;
 			for(val opResult: opResults) {
 				val jobId = opResult.jobId;
-				val jobEntry = jobQueueById.get(jobId);
+				JobQueueEntry jobEntry; 
+				if (prevJobId == jobId) {
+					jobEntry = prevJobEntry;
+				} else {
+					jobEntry = jobQueueById.get(jobId);
+					prevJobId = jobId;
+					prevJobEntry = jobEntry;
+				}
+				val opId = opResult.toId();
 				if (jobEntry == null) {
-					log.warn("jobId " + jobId + " not found to handle finished ops? ..ignore");
+					log.warn("job not found to handle finished op " + opId + " ? ..ignore");
 					continue;
 				}
+				session.removePolledOp(opId);
 				jobEntry.queue.onOpExecuted(opResult);
 			}
 		}
 	}
 
-	public void onOpFinished(BlobStorageOperationResult opResult) {
+	public void onOpFinished(ExecutorSessionEntry session, BlobStorageOperationResult opResult) {
 		synchronized(lock) {
 			val jobId = opResult.jobId;
 			val jobEntry = jobQueueById.get(jobId);
+			val opId = opResult.toId();
 			if (jobEntry == null) {
-				log.warn("jobId " + jobId + " not found to handle finished ops? ..ignore");
+				log.warn("job not found to handle finished op " + opId + " ? ..ignore");
 				return;
 			}
+			session.removePolledOp(opId);
 			jobEntry.queue.onOpExecuted(opResult);
 		}
 	}

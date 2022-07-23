@@ -28,6 +28,10 @@ public abstract class BlobStorageOperation {
 
     // --------------------------------------------------------------------------------------------
 
+    public BlobStorageOperationId toId() {
+    	return new BlobStorageOperationId(jobId, taskId);
+    }
+
     public abstract String taskTypeName();
 
     public abstract PerBlobStoragesPreEstimateIOCost preEstimateExecutionCost();

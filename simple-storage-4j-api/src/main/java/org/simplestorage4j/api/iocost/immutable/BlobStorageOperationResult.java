@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.iocost.dto.BlobStorageOperationResultDTO;
+import org.simplestorage4j.api.ops.BlobStorageOperationId;
 import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -117,6 +118,10 @@ public class BlobStorageOperationResult {
 
 	public static List<BlobStorageOperationResult> fromDTOs(Collection<BlobStorageOperationResultDTO> srcs) {
 		return BlobStorageUtils.map(srcs, x -> fromDTO(x));
+	}
+
+	public BlobStorageOperationId toId() {
+		return new BlobStorageOperationId(jobId, taskId);
 	}
 
 }

@@ -41,8 +41,8 @@ public class ExecutorSessionService {
 	@GuardedBy("lock")
 	private final Map<String, ExecutorSessionEntry> sessions = new HashMap<>();
 
-	@Value("${storage-app-server.sessions.maxPingAliveSeconds:240}")
-	private long maxPingAliveSeconds = 4 * 60;
+	@Value("${storage-app-server.sessions.maxPingAliveSeconds:180}")
+	private long maxPingAliveSeconds = 3 * 60;
 
 	@Value("${storage-app-server.sessions.checkSessionAlivePeriodSeconds:30}")
 	private long checkSessionAlivePeriodSeconds = 30;
@@ -130,27 +130,28 @@ public class ExecutorSessionService {
 	public void onExecutorStop(ExecutorSessionStopRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
 		List<PolledBlobStorageOperationEntry> polledJobTasks;
+		ExecutorSessionEntry session;
 		synchronized (lock) {
-			val found = sessions.remove(sessionId);
-			if (found == null) {
+			session = sessions.remove(sessionId);
+			if (session == null) {
 				log.warn("session '" + sessionId + "' not found.. ignore onExecutorStop()");
 				return;
 			}
-			polledJobTasks = found.clearGetCopyPolledJobTasks();
+			polledJobTasks = session.clearGetCopyPolledJobTasks();
 		}
 		if (!polledJobTasks.isEmpty()) {
 			log.info("onExecutorStop " + sessionId + ", found " + polledJobTasks.size()
 					+ " polled tasks, re-put to queues");
-			storageOpsService.onExecutorStop_reputPolledTasks(polledJobTasks);
+			storageOpsService.onExecutorStop_reputPolledTasks(session, polledJobTasks);
 		}
 	}
 
-	protected void onExecutorSessionDead(ExecutorSessionEntry deadSession) {
-		val polledJobTasks = deadSession.clearGetCopyPolledJobTasks();
+	protected void onExecutorSessionDead(ExecutorSessionEntry session) {
+		val polledJobTasks = session.clearGetCopyPolledJobTasks();
 		if (!polledJobTasks.isEmpty()) {
-			log.info("onExecutorSessionDead " + deadSession.sessionId + ", found " + polledJobTasks.size()
+			log.info("onExecutorSessionDead " + session.sessionId + ", found " + polledJobTasks.size()
 					+ " polled tasks, re-put to queues");
-			storageOpsService.onExecutorStop_reputPolledTasks(polledJobTasks);
+			storageOpsService.onExecutorStop_reputPolledTasks(session, polledJobTasks);
 		}
 	}
 

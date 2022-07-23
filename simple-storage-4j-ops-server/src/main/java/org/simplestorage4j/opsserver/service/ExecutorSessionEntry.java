@@ -6,9 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import org.simplestorage4j.api.iocost.counter.PerBlobStoragesIOTimeCounter;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.iocost.immutable.PerBlobStoragesIOTimeResult;
+import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.BlobStorageOperationId;
 import org.simplestorage4j.api.util.BlobStorageUtils;
 import org.simplestorage4j.opscommon.dto.executor.ExecutorSessionUpdatePollingDTO;
@@ -36,8 +39,11 @@ public class ExecutorSessionEntry {
 
 	@Getter
 	private final Map<String,String> props;
+
+	private final Object lock = new Object();
 	
-	private Map<BlobStorageOperationId,PolledBlobStorageOperationEntry> polledJobTasks = new HashMap<>();
+	@GuardedBy("lock")
+	private Map<BlobStorageOperationId,PolledBlobStorageOperationEntry> polledOps = new HashMap<>();
 
 	private final PerBlobStoragesIOTimeCounter totalIOTimePerStorage = new PerBlobStoragesIOTimeCounter();
 	
@@ -78,15 +84,34 @@ public class ExecutorSessionEntry {
 	}
 
 	// ------------------------------------------------------------------------
+
+	public void addPolledOp(BlobStorageOperation op) {
+		val opId = op.toId();
+		val now = System.currentTimeMillis();
+		val polledTask = new PolledBlobStorageOperationEntry(this, op, now);
+		synchronized(lock) {
+			polledOps.put(opId, polledTask);
+		}
+	}
+
+	public PolledBlobStorageOperationEntry removePolledOp(BlobStorageOperationId opId) {
+		synchronized(lock) {
+			return polledOps.remove(opId);
+		}
+	}
 	
-	public Map<BlobStorageOperationId, PolledBlobStorageOperationEntry> getPolledJobTasks() {
-		return polledJobTasks;
+	public List<PolledBlobStorageOperationEntry> getCopyPolledJobTasks() {
+		synchronized(lock) {
+			return new ArrayList<>(polledOps.values());
+		}
 	}
 	
 	public List<PolledBlobStorageOperationEntry> clearGetCopyPolledJobTasks() {
-		val res = new ArrayList<>(polledJobTasks.values());
-		polledJobTasks.clear();
-		return res;
+		synchronized(lock) {
+			val res = new ArrayList<>(polledOps.values());
+			polledOps.clear();
+			return res;
+		}
 	}
 
 	// ------------------------------------------------------------------------
@@ -108,9 +133,11 @@ public class ExecutorSessionEntry {
 	}
 
 	public ExecutorSessionPolledOpsDTO toCurrPolledOpsDTO() {
-		val polledOps = BlobStorageUtils.map(polledJobTasks.values(), 
-				x -> new BlobStoragePolledOperationDTO(x.polledStartTime, x.op.toDTO()));
-		return new ExecutorSessionPolledOpsDTO(sessionId, polledOps);
+		synchronized(lock) {
+			val polledOps = BlobStorageUtils.map(polledOps.values(), 
+					x -> new BlobStoragePolledOperationDTO(x.polledTime, x.op.toDTO()));
+			return new ExecutorSessionPolledOpsDTO(sessionId, polledOps);
+		}
 	}
 
 	public ExecutorSessionRecentIOStatsDTO toRecentIOStatsDTO() {
@@ -118,4 +145,15 @@ public class ExecutorSessionEntry {
 		return new ExecutorSessionRecentIOStatsDTO(sessionId, totalIOTimePerStorageDto);
 	}
 
+	@Override
+	public String toString() {
+		synchronized(lock) {
+			return "{ExecutorSessionEntry" //
+					+ " sessionId:" + sessionId //
+					+ " polledJobTasks:" + polledOps.size()
+					+ "}";
+		}
+	}
+
+	
 }
