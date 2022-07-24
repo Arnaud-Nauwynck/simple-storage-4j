@@ -40,6 +40,11 @@ public class BlobStorageIOTimeCounter {
 			opCount.callCount, opCount.metadataReadCount, opCount.metadataWriteCount);
 	}
 
+	public void incr(BlobStorageIOTimeResultDTO opCount) {
+		incr(opCount.elapsedTimeMillis, opCount.ioReadLen, opCount.ioWriteLen, //
+			opCount.callCount, opCount.metadataReadCount, opCount.metadataWriteCount);
+	}
+
 	public synchronized BlobStorageIOTimeResultDTO toDTO() {
 		return new BlobStorageIOTimeResultDTO(elapsedTimeMillis, ioReadLen, ioWriteLen, //
 			callCount, metadataReadCount, metadataWriteCount);

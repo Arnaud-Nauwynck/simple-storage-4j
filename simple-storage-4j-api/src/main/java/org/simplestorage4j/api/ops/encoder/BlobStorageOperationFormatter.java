@@ -1,4 +1,9 @@
 package org.simplestorage4j.api.ops.encoder;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Collection;
+
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.BlobStorageId;
 import org.simplestorage4j.api.BlobStoragePath;
@@ -10,10 +15,6 @@ import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation;
 import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation.SrcStorageZipEntry;
 
 import com.google.common.collect.ImmutableList;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -33,6 +34,12 @@ public class BlobStorageOperationFormatter {
 			this.out = out;
 		}
 
+		public void write(Collection<BlobStorageOperation> ops) {
+			for(val op: ops) {
+				write(op);
+			}
+		}
+		
 		public void write(BlobStorageOperation op) {
 			out.print(op.taskId);
 			printSep();

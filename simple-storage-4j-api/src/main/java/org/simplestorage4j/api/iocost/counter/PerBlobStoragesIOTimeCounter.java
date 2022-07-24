@@ -33,6 +33,15 @@ public class PerBlobStoragesIOTimeCounter {
 		}
 	}
 
+	public void incr(PerBlobStoragesIOTimeResultDTO add) {
+		for(val e : add.perStorageIOCosts.entrySet()) {
+			val id = BlobStorageId.of(e.getKey());
+			val storageIncr = e.getValue();
+			val counter = getOrCreateCounterFor(id);
+			counter.incr(storageIncr);
+		}
+	}
+
 	public PerBlobStoragesIOTimeResultDTO toDTO() {
 		val res = new PerBlobStoragesIOTimeResultDTO();
 		synchronized(lock) {

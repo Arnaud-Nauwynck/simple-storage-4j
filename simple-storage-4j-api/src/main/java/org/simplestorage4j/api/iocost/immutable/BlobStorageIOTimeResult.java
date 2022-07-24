@@ -115,6 +115,19 @@ public class BlobStorageIOTimeResult {
 		sb.append(sep);		
 	}
 
+	public static BlobStorageIOTimeResult parseFromTextLine(String line, char sep) {
+		val fields = line.split(Character.toString(sep));
+		val elapsedTimeMillis = Long.parseLong(fields[0]);
+		// may use ThreadCpuTime, threadUserTime, threadKernelTime ...
+		val ioReadLen = Long.parseLong(fields[1]);
+		val ioWriteLen = Long.parseLong(fields[2]);
+		val callCount = Integer.parseInt(fields[3]);
+		val metadataReadCount = Integer.parseInt(fields[4]);
+		val metadataWriteCount = Integer.parseInt(fields[5]);
+		return new BlobStorageIOTimeResult(elapsedTimeMillis, ioReadLen, ioWriteLen, 
+				callCount, metadataReadCount, metadataWriteCount);
+	}
+
 	@Override
 	public String toString() {
 		return "{BlobStorageIOTimeResult " //
@@ -127,5 +140,4 @@ public class BlobStorageIOTimeResult {
 				+ "}";
 	}
 
-	
 }

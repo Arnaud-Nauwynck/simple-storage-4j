@@ -1,5 +1,6 @@
 package org.simplestorage4j.api.ops.executor;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +18,10 @@ import org.simplestorage4j.api.iocost.dto.QueueStatsDTO;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -106,6 +110,34 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 	
+//	public static BlobStorageJobOperationsExecQueue fromData(
+//			long jobId,
+//			BlobStorageOperationExecQueueHook opHook,
+//			boolean keepDoneOps,
+//			BlobStorageOperationsQueueDTO data) {
+//		val res = new BlobStorageJobOperationsExecQueue(
+//				jobId, opHook, keepDoneOps,
+//				null // queuedOps
+//				);
+//		res.setReloadedData(data);
+//		return res;
+//	}
+	
+	public void setReloadedData(BlobStorageOperationsQueueDTO data) {
+		QueueStatsDTO dataQueueStats = (data != null)? data.queueStats : null;
+		if (dataQueueStats != null) {
+			this.doneOpsCount = dataQueueStats.doneOpsCount;
+			
+			// TOADD..
+			// res.errorOps = 
+			// res.warningOps = 
+	
+			this.queuePreEstimateIOCosts.incr(dataQueueStats.perStorageQueuedPreEstimateIOCosts);
+			// transient.. lost  res.runningPreEstimateIOCosts.incr(dataQueueStats.perStorageRunningPreEstimateIOCosts);
+			this.perStoragesIOTimeCounter.incr(dataQueueStats.perStorageDoneStats);
+			this.perStoragesErrorIOTimeCounter.incr(dataQueueStats.perStorageErrorStats);
+		}
+	}
 
 	// ------------------------------------------------------------------------
 
@@ -282,7 +314,7 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 
-	public QueueStatsDTO getQueueStatsDTO() {
+	public QueueStatsDTO toQueueStatsDTO() {
 		synchronized(lock) {
 			val queuedCount = this.queuedOps.size();
 			val runningOpsCount = this.runningOps.size();
@@ -323,5 +355,34 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 
+	// ------------------------------------------------------------------------
+	
+	@NoArgsConstructor @AllArgsConstructor
+	@Getter @Setter
+	public static class BlobStorageOperationsQueueDTO implements Serializable {
+
+		/** */
+		private static final long serialVersionUID = 1L;
+
+		public long taskIdGenerator;
+
+		// queuedOps => persisted in file
+		// runningOps => transient NOT persisted, lost.. but will be re-executed later 
+	
+		// warningOps, errorOps => not in separate file?..
+
+		public QueueStatsDTO queueStats;
+		// public PerBlobStoragesPreEstimateIOCostDTO queuePreEstimateIOCosts;
+		// public PerBlobStoragesPreEstimateIOCostDTO runningPreEstimateIOCosts;
+		// public PerBlobStoragesIOTimeResultDTO perStoragesIOTimeCounter;
+		// public PerBlobStoragesIOTimeResultDTO  perStoragesErrorIOTimeCounter;
+
+	}
+	
+	public BlobStorageOperationsQueueDTO toDTO() {
+		return new BlobStorageOperationsQueueDTO(
+				taskIdGenerator.get(),
+				toQueueStatsDTO());
+	}
 
 }

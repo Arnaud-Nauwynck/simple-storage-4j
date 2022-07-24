@@ -16,6 +16,6 @@ public class PerBlobStoragesPreEstimateIOCostDTO implements Serializable {
 	/** */
 	private static final long serialVersionUID = 1L;
 	
-	public Map<String,BlobStoragePreEstimateIOCostDTO> perStorages = new LinkedHashMap<>();
+	public Map<String,BlobStoragePreEstimateIOCostDTO> perStorage = new LinkedHashMap<>();
 
 }

@@ -77,9 +77,25 @@ public class PerBlobStoragesIOTimeResult {
 	public void toTextLine(StringBuilder sb, char storageSep, char sep) {
 		for(val e : countPerStorage.entrySet()) {
 			sb.append(e.getKey().id);
-			sb.append(storageSep);
+			sb.append('=');
 			e.getValue().toTextLine(sb, sep);
+			sb.append(storageSep);
 		}
+	}
+	public static PerBlobStoragesIOTimeResult parseFromTextLine(String line, char storageSep, char sep) {
+		val countPerStorage = ImmutableMap.<BlobStorageId,BlobStorageIOTimeResult>builder();
+		val elts = line.split(Character.toString(storageSep));
+		for(val elt: elts) {
+			val storageIdSep = elt.indexOf('=');
+			if (storageIdSep == -1) {
+				continue; // should not occur
+			}
+			val storageId = BlobStorageId.of(elt.substring(0, storageIdSep));
+			val valuesText = elt.substring(storageIdSep + 1);
+			val storageIORes = BlobStorageIOTimeResult.parseFromTextLine(valuesText, sep);
+			countPerStorage.put(storageId, storageIORes);
+		}
+		return new PerBlobStoragesIOTimeResult(countPerStorage.build());
 	}
 	
 	public String toTextLine(char storageSep, char sep) {

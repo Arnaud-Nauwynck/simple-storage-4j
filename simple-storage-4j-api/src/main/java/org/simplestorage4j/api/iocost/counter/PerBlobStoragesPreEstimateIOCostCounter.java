@@ -44,6 +44,29 @@ public class PerBlobStoragesPreEstimateIOCostCounter {
 		}
 	}
 
+	public void incr(PerBlobStoragesPreEstimateIOCostCounter src) {
+		for(val e : src.perStorage.entrySet()) {
+			incr(e.getKey(), e.getValue());
+		}
+	}
+
+	public void decr(PerBlobStoragesPreEstimateIOCostCounter src) {
+		for(val e : src.perStorage.entrySet()) {
+			decr(e.getKey(), e.getValue());
+		}
+	}
+
+	public void incr(PerBlobStoragesPreEstimateIOCostDTO src) {
+		for(val e : src.perStorage.entrySet()) {
+			incr(BlobStorageId.of(e.getKey()), e.getValue());
+		}
+	}
+
+	public void decr(PerBlobStoragesPreEstimateIOCostDTO src) {
+		for(val e : src.perStorage.entrySet()) {
+			decr(BlobStorageId.of(e.getKey()), e.getValue());
+		}
+	}
 
 	public void incr(BlobStorageId storageId, BlobStoragePreEstimateIOCost src) {
 		val storageCounter = getOrCreateFor(storageId);
@@ -51,6 +74,16 @@ public class PerBlobStoragesPreEstimateIOCostCounter {
 	}
 
 	public void decr(BlobStorageId storageId, BlobStoragePreEstimateIOCost src) {
+		val storageCounter = getOrCreateFor(storageId);
+		storageCounter.decr(src);
+	}
+	
+	public void incr(BlobStorageId storageId, BlobStoragePreEstimateIOCostCounter src) {
+		val storageCounter = getOrCreateFor(storageId);
+		storageCounter.incr(src);
+	}
+
+	public void decr(BlobStorageId storageId, BlobStoragePreEstimateIOCostCounter src) {
 		val storageCounter = getOrCreateFor(storageId);
 		storageCounter.decr(src);
 	}
@@ -69,7 +102,7 @@ public class PerBlobStoragesPreEstimateIOCostCounter {
 	// ------------------------------------------------------------------------
 	
 	public static PerBlobStoragesPreEstimateIOCostCounter fromDTO(PerBlobStoragesPreEstimateIOCostDTO src) {
-		val perStorage = BlobStoragePreEstimateIOCostCounter.fromDTOsMap(src.perStorages);
+		val perStorage = BlobStoragePreEstimateIOCostCounter.fromDTOsMap(src.perStorage);
 		return new PerBlobStoragesPreEstimateIOCostCounter(perStorage);
 	}
 	

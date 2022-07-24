@@ -2,6 +2,7 @@ package org.simplestorage4j.opsserver.service;
 
 import java.util.Map;
 
+import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue.BlobStorageOperationsQueueDTO;
 import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsPersistedQueue;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueStatsDTO;
 
@@ -21,9 +22,7 @@ public class StorageJobOpsQueueEntry {
 	public final String displayMessage;
 	public final Map<String,String> props;
 
-	@Getter
 	/*pp*/ final BlobStorageJobOperationsPersistedQueue queue;
-	// public final BlobStorageJobOperationsExecQueue inMemQueue;
 
 	@Getter
 	private boolean pollingActive; // else suspended
@@ -58,7 +57,7 @@ public class StorageJobOpsQueueEntry {
 	}
 
 	public JobQueueStatsDTO toJobQueueStats() {
-		val queueStats = queue.getQueueStatsDTO();
+		val queueStats = queue.toQueueStatsDTO();
 		val elapsedSinceChanged = System.currentTimeMillis() - lastPollingActiveChangedTime;
 		return new JobQueueStatsDTO(jobId,
 				pollingActive,
@@ -77,8 +76,8 @@ public class StorageJobOpsQueueEntry {
 		public String displayMessage;
 		public Map<String,String> props;
 
-		// TODO public final BlobStorageJobOperationsExecQueue queue;
-
+		public BlobStorageOperationsQueueDTO queueData;
+		
 		public boolean pollingActive; // else suspended
 		public long lastPollingActiveChangedTime;
 		public  long totalElapsedPollingActiveTime;
@@ -86,8 +85,9 @@ public class StorageJobOpsQueueEntry {
 	}
 	
 	public JobQueueData toData() {
+		val queueData = queue.toQueueDTO();
 		return new JobQueueData(jobId, createTime, displayMessage, props, //
-				// TOADD queueData
+				queueData, //
 				pollingActive, lastPollingActiveChangedTime, totalElapsedPollingActiveTime, totalElapsedPollingSuspendedTime);
 	}
 	

@@ -68,6 +68,22 @@ public class BlobStoragePreEstimateIOCostCounter {
 		this.metadataWriteCount += src.metadataWriteCount;
 	}
 
+	public void incr(BlobStoragePreEstimateIOCostCounter src) {
+		this.ioReadLen += src.ioReadLen;
+		this.ioWriteLen += src.ioWriteLen;
+		this.callCount += src.callCount;
+		this.metadataReadCount += src.metadataReadCount;
+		this.metadataWriteCount += src.metadataWriteCount;
+	}
+
+	public void decr(BlobStoragePreEstimateIOCostCounter src) {
+		this.ioReadLen -= src.ioReadLen;
+		this.ioWriteLen -= src.ioWriteLen;
+		this.callCount -= src.callCount;
+		this.metadataReadCount -= src.metadataReadCount;
+		this.metadataWriteCount -= src.metadataWriteCount;
+	}
+
 	public synchronized void decr(BlobStoragePreEstimateIOCostDTO src) {
 		this.ioReadLen -= src.ioReadLen;
 		this.ioWriteLen -= src.ioWriteLen;

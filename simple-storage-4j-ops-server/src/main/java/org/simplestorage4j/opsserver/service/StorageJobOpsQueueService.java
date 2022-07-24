@@ -43,7 +43,7 @@ public class StorageJobOpsQueueService {
 
 	@Autowired
 	private StorageJobOpsQueueDao storageJobOpsQueueDao;
-	
+
 	private final Object lock = new Object();
 
 	@GuardedBy("lock")
@@ -67,6 +67,7 @@ public class StorageJobOpsQueueService {
 		reloadAllData();
 	}
 
+	// ------------------------------------------------------------------------
 
 	public long newJobId() {
 		synchronized(lock) {
@@ -166,7 +167,7 @@ public class StorageJobOpsQueueService {
 			val destStorageId = (req.destStorageId != null)? BlobStorageId.of(req.destStorageId) : null;
 			val mockSrcFileLen = req.mockSrcFileLen;
 			val mockDestFileLen = req.mockDestFileLen;
-			long taskId = entry.getQueue().newTaskIdsRange(mockOpsCount);
+			long taskId = entry.queue.newTaskIdsRange(mockOpsCount);
 			for(int i = 0; i < mockOpsCount; i++,taskId++) {
 				val mockOp = new MockSleepStorageOperation(jobId, taskId, 
 						mockDurationMillis, srcStorageId, destStorageId,
@@ -394,7 +395,6 @@ public class StorageJobOpsQueueService {
 		synchronized(lock) {
 			val entry = new StorageJobOpsQueueEntry(jobId, startTime, displayMessage, props, queue);
 			entry.setPollingActive(true);
-
 			if (queue.hasRemainOps()) {
 				activeJobQueues.add(entry);
 			}
@@ -403,9 +403,25 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	private void doAddReloadedQueueFromData(JobQueueData queueData) {
-		// TODO Auto-generated method stub
-		
+	private void doAddReloadedQueueFromData(JobQueueData jobQueueData) {
+		val jobId = jobQueueData.jobId;
+		val storage = storageJobOpsQueueDao.getStorage();
+		val queueBaseDirPath = storageJobOpsQueueDao.toDirPath(jobId);
+		val queue = new BlobStorageJobOperationsPersistedQueue(jobId, 
+				storage, queueBaseDirPath);
+		// reload queue statistics
+		// + re-fill in-memory remaining ops from file ... TODO
+		queue.setReloadedData(jobQueueData.queueData);
+		synchronized(lock) {
+			val entry = new StorageJobOpsQueueEntry(jobId, 
+					jobQueueData.createTime, jobQueueData.displayMessage, 
+					jobQueueData.props, queue);
+			entry.setPollingActive(jobQueueData.pollingActive);
+			if (queue.hasRemainOps()) {
+				activeJobQueues.add(entry);
+			}
+			jobQueueById.put(jobId, entry);
+		}
 	}
 
 	protected void reloadAllData() {
@@ -415,7 +431,6 @@ public class StorageJobOpsQueueService {
 		for(val queueData: queueDatas) {
 			doAddReloadedQueueFromData(queueData);
 		}
-		// TODO reload statistics
 		// update last id + activeJobQueues
 		for(val entry: jobQueueById.values()) {
 			jobIdGenerator = Math.max(jobIdGenerator, entry.jobId);

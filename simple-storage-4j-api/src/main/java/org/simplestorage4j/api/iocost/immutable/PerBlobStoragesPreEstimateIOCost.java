@@ -38,7 +38,7 @@ public class PerBlobStoragesPreEstimateIOCost {
 	// ------------------------------------------------------------------------
 	
 	public static PerBlobStoragesPreEstimateIOCost fromDTO(PerBlobStoragesPreEstimateIOCostDTO src) {
-		val perStorage = BlobStoragePreEstimateIOCost.fromDTOsMap(src.perStorages);
+		val perStorage = BlobStoragePreEstimateIOCost.fromDTOsMap(src.perStorage);
 		return new PerBlobStoragesPreEstimateIOCost(perStorage);
 	}
 	

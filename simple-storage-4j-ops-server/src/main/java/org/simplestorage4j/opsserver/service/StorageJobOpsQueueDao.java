@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StorageJobOpsQueueDao {
 
-	private static final String STATE_FILENAME = "state.json";
+	private static final String STATE_FILENAME = "state.json"; // rename "job-state.json" ?
 	
 	@Getter
 	private final BlobStorage storage;

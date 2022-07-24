@@ -1,14 +1,20 @@
 package org.simplestorage4j.api.ops.executor;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.List;
 
 import org.simplestorage4j.api.BlobStorage;
 import org.simplestorage4j.api.iocost.dto.QueueStatsDTO;
 import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
+import org.simplestorage4j.api.ops.encoder.BlobStorageOpDoneLineFormatter;
+import org.simplestorage4j.api.ops.encoder.BlobStorageOperationFormatter.BlobStorageOperationWriter;
+import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue.BlobStorageOperationsQueueDTO;
 
+import lombok.Getter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,6 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BlobStorageJobOperationsPersistedQueue {
 
+	private static final String OPS_FILENAME = "ops.txt";
+	private static final String DONE_FILENAME = "done-ops.txt";
+
+	@Getter
 	private final long jobId;
 
 	private final BlobStorage storage;
@@ -36,23 +46,29 @@ public class BlobStorageJobOperationsPersistedQueue {
 	private long lastFlushedDoneTime;
 	private long maxElapseFlushedDoneMillis = 30_000;
 	private OutputStream writeDoneOutput;
+	private final BlobStorageOpDoneLineFormatter doneLineFormatter;
 	
 	// ------------------------------------------------------------------------
 	
 	public BlobStorageJobOperationsPersistedQueue(long jobId, BlobStorage storage, String queueBaseDirPath) {
 		this.jobId = jobId;
 		this.storage = storage;
-		this.opsFilePath = queueBaseDirPath + "/ops.txt";
-		this.doneOpsFilePath = queueBaseDirPath + "/doneOps.txt";
+		this.opsFilePath = queueBaseDirPath + "/" + OPS_FILENAME;
+		this.doneOpsFilePath = queueBaseDirPath + "/" + DONE_FILENAME;
 		
 		if (! storage.exists(queueBaseDirPath)) {
 			storage.mkdirs(queueBaseDirPath);
 		}
 		val opHook = new InnerQueueHook();
 		this.delegate = new BlobStorageJobOperationsExecQueue(jobId, opHook, false);
+		this.doneLineFormatter = new BlobStorageOpDoneLineFormatter(jobId);
 	}
 	
-	public void init() {
+	public void setReloadedData(BlobStorageOperationsQueueDTO data) {
+		this.lastFlushedDoneTime = System.currentTimeMillis();
+		this.delegate.setReloadedData(data);
+		// reload in-memory remaining ops from files 'ops.txt' without already done ids from 'done.txt'
+		
 	}
 
 	public void close() {
@@ -82,6 +98,7 @@ public class BlobStorageJobOperationsPersistedQueue {
 		return this.writeDoneOutput;
 	}
 
+	
 	/** append to done file... flush if older than 30s */
 	private void appendToDoneFile(String text) {
 		val out = ensureWriteOpenDone();
@@ -109,8 +126,8 @@ public class BlobStorageJobOperationsPersistedQueue {
 		return delegate.hasRemainOps();
 	}
 
-	public QueueStatsDTO getQueueStatsDTO() {
-		return delegate.getQueueStatsDTO();
+	public QueueStatsDTO toQueueStatsDTO() {
+		return delegate.toQueueStatsDTO();
 	}
 
 	public long newTaskIdsRange(int size) {
@@ -119,8 +136,15 @@ public class BlobStorageJobOperationsPersistedQueue {
 
 	public void addOps(List<BlobStorageOperation> ops) {
 		delegate.addOps(ops);
-		// TODO also append to persistent file!!
-	
+		// append to persistent file
+		try(val out = storage.openWrite(opsFilePath, true)) {
+			val printOut = new PrintWriter(new BufferedOutputStream(out));
+			val opWriter = new BlobStorageOperationWriter(printOut);
+			opWriter.write(ops);
+			printOut.flush();
+		} catch(IOException ex) {
+			throw new RuntimeException("Failed to write ops to '" + opsFilePath + "'", ex);
+		}
 	}
 
 	public BlobStorageOperation poll() {
@@ -148,6 +172,10 @@ public class BlobStorageJobOperationsPersistedQueue {
 		return delegate.listOpWarnings();
 	}
 
+	public BlobStorageOperationsQueueDTO toQueueDTO() {
+		return delegate.toDTO();
+	}
+
 	// ------------------------------------------------------------------------
 
 	/**
@@ -160,23 +188,7 @@ public class BlobStorageJobOperationsPersistedQueue {
 
 		@Override
 		public void onOpExecutedSuccess(BlobStorageOperationResult result, BlobStorageOperation op) {
-			val hasWarn = (result.warnings != null && ! result.warnings.isEmpty());
-			val statusLetter = (result.errorMessage != null)? 'E' // should not occur?
-					: (hasWarn)? 'W' : '-';
-			val sb = new StringBuilder(100);
-			sb.append(statusLetter + ":" + op.taskId 
-					+ ":" + result.startTime //
-					+ ":" + result.elapsedMillis
-					+ ":");
-			if (hasWarn) {
-				sb.append(result.warnings.toString().replaceAll(":", "_"));
-			}
-			sb.append(":");
-			// .. should not occur: errorMessage, exception;
-
-			result.ioTimePerStorage.toTextLine(sb, '=', ',');
-			sb.append("\n");
-			val line = sb.toString();
+			val line = doneLineFormatter.formatLineToDoneFile(result);
 			appendToDoneFile(line);
 		}
 
