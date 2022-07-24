@@ -2,6 +2,7 @@ package org.simplestorage4j.opsserver.configuration;
 
 import java.util.List;
 
+import org.simplestorage4j.opscommon.configuration.CommonStorageOpsAppParams.BlobStorageParams;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -23,5 +24,13 @@ public class OpsServerAppParams {
 		private String principal;
 		private List<String> authorities;
 	}
+
+	private BlobStorageParams stateStorage;
+	
+	private String queueStorageBaseDir = "queues";
+
+	private String queueStatisticsStorageBaseDir = "queues-statistics";
+	private String sessionStatisticsStorageBaseDir = "session-statistics";
+	private String storageGroupStatisticsStorageBaseDir = "storage-group-statistics";
 
 }

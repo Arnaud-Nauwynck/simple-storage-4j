@@ -7,7 +7,7 @@ import org.simplestorage4j.opscommon.dto.session.ExecutorSessionPolledOpsDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionPollingStateDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionRecentIOStatsDTO;
 import org.simplestorage4j.opscommon.dto.session.ExecutorSessionUpdatePollingRequestDTO;
-import org.simplestorage4j.opsserver.service.ExecutorSessionService;
+import org.simplestorage4j.opsserver.service.StorageOpsExecutorSessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StorageOpsExecutorSessionRestController {
 
 	@Autowired
-	private ExecutorSessionService executorSessionService;
+	private StorageOpsExecutorSessionService executorSessionService;
 
 	// ------------------------------------------------------------------------
 

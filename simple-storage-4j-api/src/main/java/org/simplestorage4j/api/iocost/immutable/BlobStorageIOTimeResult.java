@@ -99,5 +99,33 @@ public class BlobStorageIOTimeResult {
 		return res.build();
 	}
 
+	public void toTextLine(StringBuilder sb, char sep) {
+		sb.append(Long.toString(elapsedTimeMillis));
+		sb.append(sep);
+		// may use ThreadCpuTime, threadUserTime, threadKernelTime ...
+		sb.append(Long.toString(ioReadLen));
+		sb.append(sep);
+		sb.append(Long.toString(ioWriteLen));
+		sb.append(sep);
+		sb.append(Integer.toString(callCount));
+		sb.append(sep);
+		sb.append(Integer.toString(metadataReadCount));
+		sb.append(sep);
+		sb.append(Integer.toString(metadataWriteCount));
+		sb.append(sep);		
+	}
+
+	@Override
+	public String toString() {
+		return "{BlobStorageIOTimeResult " //
+				+ ((elapsedTimeMillis != 0)? "elapsed=" + elapsedTimeMillis : "") //
+				+ ((ioReadLen != 0)? ", ioReadLen=" + ioReadLen : "") //
+				+ ((ioWriteLen != 0)? ", ioWriteLen=" + ioWriteLen : "") //
+				+ ((callCount > 1)? ", callCount=" + callCount : "") //
+				+ ((metadataReadCount != 0)? ", metadataReadCount=" + metadataReadCount : "") //
+				+ ((metadataWriteCount != 0)? ", metadataWriteCount=" + metadataWriteCount : "") //
+				+ "}";
+	}
+
 	
 }

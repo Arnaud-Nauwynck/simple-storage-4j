@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class ExecutorSessionService {
+public class StorageOpsExecutorSessionService {
 
 	@Autowired
 	private StorageJobOpsQueueService storageOpsService;
@@ -39,7 +39,7 @@ public class ExecutorSessionService {
 	private final Object lock = new Object();
 
 	@GuardedBy("lock")
-	private final Map<String, ExecutorSessionEntry> sessions = new HashMap<>();
+	private final Map<String, StorageOpsExecutorSessionEntry> sessions = new HashMap<>();
 
 	@Value("${storage-app-server.sessions.maxPingAliveSeconds:180}")
 	private long maxPingAliveSeconds = 3 * 60;
@@ -87,7 +87,7 @@ public class ExecutorSessionService {
 	}
 
 	private void checkSessionsAlive() {
-		val deadSessions = new ArrayList<ExecutorSessionEntry>();
+		val deadSessions = new ArrayList<StorageOpsExecutorSessionEntry>();
 		val now = System.currentTimeMillis();
 		val maxPingAliveMillis = maxPingAliveSeconds * 1000;
 		synchronized (lock) {
@@ -116,7 +116,7 @@ public class ExecutorSessionService {
 
 	public void onExecutorStart(ExecutorSessionStartRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
-		val entry = new ExecutorSessionEntry(sessionId, req.host, req.startTime, req.props);
+		val entry = new StorageOpsExecutorSessionEntry(sessionId, req.host, req.startTime, req.props);
 		entry.lastPingAliveTime = System.currentTimeMillis();
 		synchronized (lock) {
 			val found = sessions.get(sessionId);
@@ -129,8 +129,8 @@ public class ExecutorSessionService {
 
 	public void onExecutorStop(ExecutorSessionStopRequestDTO req) {
 		val sessionId = Objects.requireNonNull(req.sessionId);
-		List<PolledBlobStorageOperationEntry> polledJobTasks;
-		ExecutorSessionEntry session;
+		List<StoragePolledOpEntry> polledJobTasks;
+		StorageOpsExecutorSessionEntry session;
 		synchronized (lock) {
 			session = sessions.remove(sessionId);
 			if (session == null) {
@@ -146,7 +146,7 @@ public class ExecutorSessionService {
 		}
 	}
 
-	protected void onExecutorSessionDead(ExecutorSessionEntry session) {
+	protected void onExecutorSessionDead(StorageOpsExecutorSessionEntry session) {
 		val polledJobTasks = session.clearGetCopyPolledJobTasks();
 		if (!polledJobTasks.isEmpty()) {
 			log.info("onExecutorSessionDead " + session.sessionId + ", found " + polledJobTasks.size()
@@ -155,15 +155,15 @@ public class ExecutorSessionService {
 		}
 	}
 
-	public ExecutorSessionEntry updateOrCreateSessionAlive(String sessionId) {
+	public StorageOpsExecutorSessionEntry updateOrCreateSessionAlive(String sessionId) {
 		synchronized (lock) {
-			ExecutorSessionEntry res = sessions.get(sessionId);
+			StorageOpsExecutorSessionEntry res = sessions.get(sessionId);
 			if (res == null) {
 				log.warn("session '" + sessionId + "' not found.. implicit create");
 				String host = "?";
 				val startTime = System.currentTimeMillis();
 				val props = new HashMap<String, String>();
-				res = new ExecutorSessionEntry(sessionId, host, startTime, props);
+				res = new StorageOpsExecutorSessionEntry(sessionId, host, startTime, props);
 				sessions.put(sessionId, res);
 			}
 			res.lastPingAliveTime = System.currentTimeMillis();
@@ -174,7 +174,7 @@ public class ExecutorSessionService {
 	// handle public Rest api for session managment
 	// ------------------------------------------------------------------------
 
-	private ExecutorSessionEntry doGetSession(String sessionId) {
+	private StorageOpsExecutorSessionEntry doGetSession(String sessionId) {
 		Objects.requireNonNull(sessionId);
 		val res = sessions.get(sessionId);
 		if (res == null) {

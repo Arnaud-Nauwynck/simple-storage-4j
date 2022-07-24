@@ -30,7 +30,7 @@ import lombok.val;
  * entry info for an Executor session 
  */
 @RequiredArgsConstructor
-public class ExecutorSessionEntry {
+public class StorageOpsExecutorSessionEntry {
 	
 	public final String sessionId;
 	
@@ -43,7 +43,7 @@ public class ExecutorSessionEntry {
 	private final Object lock = new Object();
 	
 	@GuardedBy("lock")
-	private Map<BlobStorageOperationId,PolledBlobStorageOperationEntry> polledOps = new HashMap<>();
+	private Map<BlobStorageOperationId,StoragePolledOpEntry> polledOps = new HashMap<>();
 
 	private final PerBlobStoragesIOTimeCounter totalIOTimePerStorage = new PerBlobStoragesIOTimeCounter();
 	
@@ -88,25 +88,25 @@ public class ExecutorSessionEntry {
 	public void addPolledOp(BlobStorageOperation op) {
 		val opId = op.toId();
 		val now = System.currentTimeMillis();
-		val polledTask = new PolledBlobStorageOperationEntry(this, op, now);
+		val polledTask = new StoragePolledOpEntry(this, op, now);
 		synchronized(lock) {
 			polledOps.put(opId, polledTask);
 		}
 	}
 
-	public PolledBlobStorageOperationEntry removePolledOp(BlobStorageOperationId opId) {
+	public StoragePolledOpEntry removePolledOp(BlobStorageOperationId opId) {
 		synchronized(lock) {
 			return polledOps.remove(opId);
 		}
 	}
 	
-	public List<PolledBlobStorageOperationEntry> getCopyPolledJobTasks() {
+	public List<StoragePolledOpEntry> getCopyPolledJobTasks() {
 		synchronized(lock) {
 			return new ArrayList<>(polledOps.values());
 		}
 	}
 	
-	public List<PolledBlobStorageOperationEntry> clearGetCopyPolledJobTasks() {
+	public List<StoragePolledOpEntry> clearGetCopyPolledJobTasks() {
 		synchronized(lock) {
 			val res = new ArrayList<>(polledOps.values());
 			polledOps.clear();

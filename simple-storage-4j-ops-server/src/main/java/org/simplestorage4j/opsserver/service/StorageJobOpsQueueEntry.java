@@ -2,24 +2,28 @@ package org.simplestorage4j.opsserver.service;
 
 import java.util.Map;
 
-import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue;
+import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsPersistedQueue;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueStatsDTO;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Slf4j
-public class JobQueueEntry {
+public class StorageJobOpsQueueEntry {
 	
 	public final long jobId;
 	public final long createTime;
 	public final String displayMessage;
 	public final Map<String,String> props;
 
-	public final BlobStorageJobOperationsExecQueue queue;
+	@Getter
+	/*pp*/ final BlobStorageJobOperationsPersistedQueue queue;
+	// public final BlobStorageJobOperationsExecQueue inMemQueue;
 
 	@Getter
 	private boolean pollingActive; // else suspended
@@ -30,6 +34,8 @@ public class JobQueueEntry {
 	@Getter
 	private long totalElapsedPollingSuspendedTime;
 
+	// ------------------------------------------------------------------------
+	
 	public void setPollingActive(boolean p) {
 		if (pollingActive == p) {
 			return;
@@ -62,4 +68,40 @@ public class JobQueueEntry {
 				queueStats);
 	}
 
+	/** persistent Data / DTO for JobQueueEntry */
+	@NoArgsConstructor @AllArgsConstructor
+	public static class JobQueueData {
+		
+		public long jobId;
+		public long createTime;
+		public String displayMessage;
+		public Map<String,String> props;
+
+		// TODO public final BlobStorageJobOperationsExecQueue queue;
+
+		public boolean pollingActive; // else suspended
+		public long lastPollingActiveChangedTime;
+		public  long totalElapsedPollingActiveTime;
+		public  long totalElapsedPollingSuspendedTime;
+	}
+	
+	public JobQueueData toData() {
+		return new JobQueueData(jobId, createTime, displayMessage, props, //
+				// TOADD queueData
+				pollingActive, lastPollingActiveChangedTime, totalElapsedPollingActiveTime, totalElapsedPollingSuspendedTime);
+	}
+	
+	public static StorageJobOpsQueueEntry fromData(JobQueueData src, BlobStorageJobOperationsPersistedQueue queue) {
+		val res = new StorageJobOpsQueueEntry(src.jobId, src.createTime, src.displayMessage, src.props, queue);
+		res.pollingActive = src.pollingActive;
+		res.lastPollingActiveChangedTime = src.lastPollingActiveChangedTime;
+		res.totalElapsedPollingActiveTime = src.totalElapsedPollingActiveTime;
+		res.totalElapsedPollingSuspendedTime = src.totalElapsedPollingSuspendedTime;
+		return res;
+	}
+
+	public boolean hasRemainOps() {
+		return queue.hasRemainOps();
+	}
+	
 }

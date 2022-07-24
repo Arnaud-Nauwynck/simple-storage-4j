@@ -53,7 +53,7 @@ public class CommonStorageOpsAppConfiguration {
 		return new BlobStorageOperationDtoResolver(blobStorageRepository);
 	}
 	
-	private BlobStorage createBlobStorage(BlobStorageParams params) {
+	public static BlobStorage createBlobStorage(BlobStorageParams params) {
 		val className = params.getClassname();
 		val idText = Objects.requireNonNull(params.getId());
 		val id = BlobStorageId.of(idText);
@@ -78,7 +78,7 @@ public class CommonStorageOpsAppConfiguration {
 		return Objects.requireNonNull(res);
 	}
 
-	private BlobStorage createFileBlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName, 
+	private static BlobStorage createFileBlobStorage(BlobStorageId id, BlobStorageGroupId groupId, String displayName, 
 			BlobStorageParams params) {
 		File baseDir = new File(params.getUrl());
 		if (! baseDir.exists()) {
@@ -88,7 +88,7 @@ public class CommonStorageOpsAppConfiguration {
 		return new FileBlobStorage(id, groupId, displayName, baseDir);
 	}
 
-	private BlobStorage createBucketAsFirstDirS3BlobStorage( //
+	private static BlobStorage createBucketAsFirstDirS3BlobStorage( //
 			BlobStorageId id, BlobStorageGroupId groupId, String displayName, // 
 			BlobStorageParams params) {
 		val props = Objects.requireNonNull(params.getProps()); 
@@ -112,7 +112,7 @@ public class CommonStorageOpsAppConfiguration {
 				s3Client, dirToS3BucketName, s3BucketNameToDirName);
 	}
 
-	private BlobStorage createFixedBucketS3BlobStorage( //
+	private static BlobStorage createFixedBucketS3BlobStorage( //
 			BlobStorageId id, BlobStorageGroupId groupId, String displayName, //
 			BlobStorageParams params) {
 		val props = Objects.requireNonNull(params.getProps()); 
@@ -121,7 +121,7 @@ public class CommonStorageOpsAppConfiguration {
 		return new FixedBucketS3BlobStorage(id, groupId, displayName, s3Client, bucketName);
 	}
 
-	private S3Client createS3Client(String displayName, BlobStorageParams params,
+	private static S3Client createS3Client(String displayName, BlobStorageParams params,
 			Map<String, String> props) {
 		val s3Params = new S3ClientParams(displayName, 
 				params.getUrl(), // endpoint
@@ -131,7 +131,7 @@ public class CommonStorageOpsAppConfiguration {
 		return new S3Client(displayName, s3Params);
 	}	
 
-	private BlobStorage createAdlsGen2BlobStorage( //
+	private static BlobStorage createAdlsGen2BlobStorage( //
 			BlobStorageId id, BlobStorageGroupId groupId, String displayName, //
 			BlobStorageParams params) {
 		val props = Objects.requireNonNull(params.getProps()); 

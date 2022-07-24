@@ -27,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StorageOpsExecutorCallbackService {
 
 	@Autowired
-	private ExecutorSessionService executorSessionService;
+	private StorageOpsExecutorSessionService executorSessionService;
 
 	@Autowired
 	private StorageJobOpsQueueService storageOpsService;

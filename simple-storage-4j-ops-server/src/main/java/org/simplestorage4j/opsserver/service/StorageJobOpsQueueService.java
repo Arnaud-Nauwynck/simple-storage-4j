@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.BlobStorageId;
@@ -13,9 +14,8 @@ import org.simplestorage4j.api.iocost.immutable.BlobStorageOperationResult;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.MockSleepStorageOperation;
 import org.simplestorage4j.api.ops.encoder.BlobStorageOperationDtoResolver;
-import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsExecQueue;
+import org.simplestorage4j.api.ops.executor.BlobStorageJobOperationsPersistedQueue;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationError;
-import org.simplestorage4j.api.ops.executor.BlobStorageOperationExecQueueHook;
 import org.simplestorage4j.api.ops.executor.BlobStorageOperationWarning;
 import org.simplestorage4j.api.util.BlobStorageUtils;
 import org.simplestorage4j.opscommon.dto.queue.AddJobOpsQueueRequestDTO;
@@ -24,6 +24,7 @@ import org.simplestorage4j.opscommon.dto.queue.AddMockOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.AddOpsToJobQueueRequestDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueInfoDTO;
 import org.simplestorage4j.opscommon.dto.queue.JobQueueStatsDTO;
+import org.simplestorage4j.opsserver.service.StorageJobOpsQueueEntry.JobQueueData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,25 +41,32 @@ public class StorageJobOpsQueueService {
 	@Autowired
 	private BlobStorageOperationDtoResolver dtoMapper;
 
+	@Autowired
+	private StorageJobOpsQueueDao storageJobOpsQueueDao;
+	
 	private final Object lock = new Object();
 
 	@GuardedBy("lock")
-	private int jobIdGenerator = 0;
+	private long jobIdGenerator = 0;
 
 	/** all job queues (even finished/errors), fast lookup by jobId */
 	@GuardedBy("lock")
-	private Map<Long,JobQueueEntry> jobQueueById = new HashMap<>();
+	private Map<Long,StorageJobOpsQueueEntry> jobQueueById = new HashMap<>();
 
 	/** currently active job queues: still containing queued operations, and status polling (not suspended) */
 	@GuardedBy("lock")
-	private List<JobQueueEntry> activeJobQueues = new ArrayList<>();
+	private List<StorageJobOpsQueueEntry> activeJobQueues = new ArrayList<>();
 
 	@GuardedBy("lock")
 	private int jobQueueRoundRobinIndex = 0;
 
-	
-
 	// ------------------------------------------------------------------------
+
+	@PostConstruct
+	public void init() {
+		reloadAllData();
+	}
+
 
 	public long newJobId() {
 		synchronized(lock) {
@@ -69,13 +77,23 @@ public class StorageJobOpsQueueService {
 	}
 
 	public AddJobOpsQueueResponseDTO createJobQueue(AddJobOpsQueueRequestDTO req) {
-		val opHook = new BlobStorageOperationExecQueueHook(); // TODO
-
-		List<BlobStorageOperation> ops = (req.ops != null)? dtoMapper.dtosToOps(req.ops) : new ArrayList<>();
 		val jobId = newJobId();
-		boolean keepDoneOps = false;
-		val queue = new BlobStorageJobOperationsExecQueue(jobId, opHook, keepDoneOps, ops);
-		doAddJobQueue(jobId, req.displayMessage, req.props, queue);
+		val storage = storageJobOpsQueueDao.getStorage();
+		val queueBaseDirPath = storageJobOpsQueueDao.toDirPath(jobId);
+		val persistedQueue = new BlobStorageJobOperationsPersistedQueue(jobId, 
+				storage, queueBaseDirPath);
+		if (req.ops != null && ! req.ops.isEmpty()) {
+			val firstGeneratedTaskId = persistedQueue.newTaskIdsRange(req.ops.size());
+			// assign jobId + unique taskIds to ops dtos, before converting to immutable ops
+			long taskId = firstGeneratedTaskId;
+			for(val op: req.ops) {
+				op.jobId = jobId;
+				op.taskId = taskId++;
+			}
+			val ops = dtoMapper.dtosToOps(req.ops);
+			persistedQueue.addOps(ops);
+		}
+		doAddJobQueue(jobId, req.displayMessage, req.props, persistedQueue);
 		return new AddJobOpsQueueResponseDTO(jobId);
 	}
 
@@ -87,7 +105,7 @@ public class StorageJobOpsQueueService {
 				return;
 			}
 			activeJobQueues.remove(entry);
-			saveJobQueues();
+			updateJobQueueData(entry, -1);
 		}
 	}
 
@@ -102,7 +120,7 @@ public class StorageJobOpsQueueService {
 			}
 			entry.setPollingActive(false);
 			activeJobQueues.remove(entry);
-			saveJobQueues();
+			updateJobQueueData(entry, 0);
 		}
 	}
 
@@ -117,10 +135,10 @@ public class StorageJobOpsQueueService {
 				return;
 			}
 			entry.setPollingActive(true);
-			if (entry.queue.hasRemainOps()) {
+			if (entry.hasRemainOps()) {
 				activeJobQueues.add(entry);
 			}
-			saveJobQueues();
+			updateJobQueueData(entry, 0);
 		}
 	}
 
@@ -128,7 +146,7 @@ public class StorageJobOpsQueueService {
 		val ops = dtoMapper.dtosToOps(req.ops);
 		synchronized(lock) {
 			val entry = jobQueueById.get(req.jobId);
-			boolean hasRemainOpsBefore = entry.queue.hasRemainOps(); 
+			boolean hasRemainOpsBefore = entry.hasRemainOps(); 
 			entry.queue.addOps(ops);
 			if (entry.isPollingActive() && ! hasRemainOpsBefore) {
 				activeJobQueues.add(entry);
@@ -140,7 +158,7 @@ public class StorageJobOpsQueueService {
 		synchronized(lock) {
 			val jobId = req.jobId;
 			val entry = jobQueueById.get(jobId);
-			val hasRemainOpsBefore = entry.queue.hasRemainOps(); 
+			val hasRemainOpsBefore = entry.hasRemainOps(); 
 			int mockOpsCount = req.mockOpsCount;
 			val mockOps = new ArrayList<BlobStorageOperation>(mockOpsCount);
 			val mockDurationMillis = req.mockOpsDurationMillis;
@@ -148,8 +166,8 @@ public class StorageJobOpsQueueService {
 			val destStorageId = (req.destStorageId != null)? BlobStorageId.of(req.destStorageId) : null;
 			val mockSrcFileLen = req.mockSrcFileLen;
 			val mockDestFileLen = req.mockDestFileLen;
-			for(int i = 0; i < mockOpsCount; i++) {
-				val taskId = entry.queue.newTaskId();
+			long taskId = entry.getQueue().newTaskIdsRange(mockOpsCount);
+			for(int i = 0; i < mockOpsCount; i++,taskId++) {
 				val mockOp = new MockSleepStorageOperation(jobId, taskId, 
 						mockDurationMillis, srcStorageId, destStorageId,
 						mockSrcFileLen, mockDestFileLen
@@ -179,7 +197,7 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	protected JobQueueInfoDTO toJobQueueInfoDTO(JobQueueEntry src) {
+	protected JobQueueInfoDTO toJobQueueInfoDTO(StorageJobOpsQueueEntry src) {
 		return new JobQueueInfoDTO(src.jobId,
 				src.createTime, src.displayMessage, src.props);
 	}
@@ -206,7 +224,7 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	public BlobStorageOperation pollOp(ExecutorSessionEntry session) {
+	public BlobStorageOperation pollOp(StorageOpsExecutorSessionEntry session) {
 		BlobStorageOperation res = null;
 		synchronized(lock) {
 			int len = activeJobQueues.size();
@@ -233,7 +251,7 @@ public class StorageJobOpsQueueService {
 		return res;
 	}
 
-	public List<BlobStorageOperation> pollOps(ExecutorSessionEntry session, int count) {
+	public List<BlobStorageOperation> pollOps(StorageOpsExecutorSessionEntry session, int count) {
 		val res = new ArrayList<BlobStorageOperation>();
 		for(int i = 0; i < count; i++) {
 			val op = pollOp(session);
@@ -246,8 +264,8 @@ public class StorageJobOpsQueueService {
 	}
 
 	public void onExecutorStop_reputPolledTasks(
-			ExecutorSessionEntry session, 
-			List<PolledBlobStorageOperationEntry> polledJobTasks) {
+			StorageOpsExecutorSessionEntry session, 
+			List<StoragePolledOpEntry> polledJobTasks) {
 		synchronized(lock) {
 			for(val polled: polledJobTasks) {
 				val op = polled.op;
@@ -267,13 +285,13 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	public void onOpsFinished(ExecutorSessionEntry session, Collection<BlobStorageOperationResult> opResults) {
+	public void onOpsFinished(StorageOpsExecutorSessionEntry session, Collection<BlobStorageOperationResult> opResults) {
 		synchronized(lock) {
 			long prevJobId = 0;
-			JobQueueEntry prevJobEntry = null;
+			StorageJobOpsQueueEntry prevJobEntry = null;
 			for(val opResult: opResults) {
 				val jobId = opResult.jobId;
-				JobQueueEntry jobEntry; 
+				StorageJobOpsQueueEntry jobEntry; 
 				if (prevJobId == jobId) {
 					jobEntry = prevJobEntry;
 				} else {
@@ -292,7 +310,7 @@ public class StorageJobOpsQueueService {
 		}
 	}
 
-	public void onOpFinished(ExecutorSessionEntry session, BlobStorageOperationResult opResult) {
+	public void onOpFinished(StorageOpsExecutorSessionEntry session, BlobStorageOperationResult opResult) {
 		synchronized(lock) {
 			val jobId = opResult.jobId;
 			val jobEntry = jobQueueById.get(jobId);
@@ -371,23 +389,45 @@ public class StorageJobOpsQueueService {
 			long jobId,
 			String displayMessage,
 			Map<String,String> props,
-			BlobStorageJobOperationsExecQueue queue) {
+			BlobStorageJobOperationsPersistedQueue queue) {
 		val startTime = System.currentTimeMillis();
 		synchronized(lock) {
-			val entry = new JobQueueEntry(jobId, startTime, displayMessage, props, queue);
+			val entry = new StorageJobOpsQueueEntry(jobId, startTime, displayMessage, props, queue);
 			entry.setPollingActive(true);
 
 			if (queue.hasRemainOps()) {
 				activeJobQueues.add(entry);
 			}
 			jobQueueById.put(jobId, entry);
-			saveJobQueues();
+			updateJobQueueData(entry, 1);
 		}
 	}
 
-	private void saveJobQueues() {
-		// TODO
+	private void doAddReloadedQueueFromData(JobQueueData queueData) {
+		// TODO Auto-generated method stub
 		
+	}
+
+	protected void reloadAllData() {
+		//  reload persisted data
+		val queueDatas = this.storageJobOpsQueueDao.listJobQueueDatas();
+		// restore queues from data
+		for(val queueData: queueDatas) {
+			doAddReloadedQueueFromData(queueData);
+		}
+		// TODO reload statistics
+		// update last id + activeJobQueues
+		for(val entry: jobQueueById.values()) {
+			jobIdGenerator = Math.max(jobIdGenerator, entry.jobId);
+			if (entry.isPollingActive() && entry.queue.hasRemainOps()) {
+				activeJobQueues.add(entry);
+			}
+		}
+	}
+
+	private void updateJobQueueData(StorageJobOpsQueueEntry entry, int way) {
+		val data = entry.toData();
+		storageJobOpsQueueDao.updateJobQueueData(data, way);
 	}
 
 }

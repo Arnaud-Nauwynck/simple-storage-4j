@@ -6,6 +6,7 @@ import org.simplestorage4j.api.iocost.dto.PerBlobStoragesIOTimeResultDTO;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 
 /**
  * immutable class for BlobStorage operation execution result
@@ -73,4 +74,24 @@ public class PerBlobStoragesIOTimeResult {
 				BlobStorageIOTimeResult.fromDTOsMap(src.perStorageIOCosts));
 	}
 
+	public void toTextLine(StringBuilder sb, char storageSep, char sep) {
+		for(val e : countPerStorage.entrySet()) {
+			sb.append(e.getKey().id);
+			sb.append(storageSep);
+			e.getValue().toTextLine(sb, sep);
+		}
+	}
+	
+	public String toTextLine(char storageSep, char sep) {
+		val sb = new StringBuilder(150);
+		toTextLine(sb, storageSep, sep);
+		return sb.toString();
+	}
+
+	@Override
+	public String toString() {
+		return "{PerBlobStoragesIOTimeResult " + toTextLine('=', ',') + "}";
+	}
+
+	
 }

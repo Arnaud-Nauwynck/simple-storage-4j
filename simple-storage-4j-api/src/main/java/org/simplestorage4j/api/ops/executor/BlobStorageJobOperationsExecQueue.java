@@ -22,7 +22,10 @@ import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Queue for BlobStorageOperation execution
+ * in-memory Queue for BlobStorageOperation execution: { queuedOps,runningOps,doneOps,errorOps, statistics }
+ * 
+ * cf also hook for notifying operation done / added / empty.. 
+ * which is used for persisting
  */
 @Slf4j
 public class BlobStorageJobOperationsExecQueue {
@@ -81,8 +84,8 @@ public class BlobStorageJobOperationsExecQueue {
 
 	// ------------------------------------------------------------------------
 
-	public BlobStorageJobOperationsExecQueue(long jobId, BlobStorageOperationExecQueueHook opHook) {
-		this(jobId, opHook, true, Collections.emptyList());
+	public BlobStorageJobOperationsExecQueue(long jobId, BlobStorageOperationExecQueueHook opHook, boolean keepDoneOps) {
+		this(jobId, opHook, keepDoneOps, Collections.emptyList());
 	}
 
 	public BlobStorageJobOperationsExecQueue(
@@ -102,6 +105,7 @@ public class BlobStorageJobOperationsExecQueue {
 			}
 		}
 	}
+	
 
 	// ------------------------------------------------------------------------
 
@@ -114,6 +118,7 @@ public class BlobStorageJobOperationsExecQueue {
 	}
 
 	public void addOp(BlobStorageOperation op) {
+		// TOADD ensure jobId + unique taskId
 		synchronized(lock) {
 			this.queuedOps.add(op);
 			val opPreEstimateCost = op.preEstimateExecutionCost();
@@ -125,6 +130,7 @@ public class BlobStorageJobOperationsExecQueue {
 	}
 
 	public void addOps(Collection<BlobStorageOperation> ops) {
+		// TOADD ensure jobId + unique taskId
 		synchronized(lock) {
 			this.queuedOps.addAll(ops);
 			for(val op: queuedOps) {
