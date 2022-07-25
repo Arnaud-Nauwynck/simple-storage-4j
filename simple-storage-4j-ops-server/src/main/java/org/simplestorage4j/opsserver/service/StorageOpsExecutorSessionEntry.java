@@ -134,9 +134,9 @@ public class StorageOpsExecutorSessionEntry {
 
 	public ExecutorSessionPolledOpsDTO toCurrPolledOpsDTO() {
 		synchronized(lock) {
-			val polledOps = BlobStorageUtils.map(polledOps.values(), 
+			val polledOpDtos = BlobStorageUtils.map(polledOps.values(), 
 					x -> new BlobStoragePolledOperationDTO(x.polledTime, x.op.toDTO()));
-			return new ExecutorSessionPolledOpsDTO(sessionId, polledOps);
+			return new ExecutorSessionPolledOpsDTO(sessionId, polledOpDtos);
 		}
 	}
 

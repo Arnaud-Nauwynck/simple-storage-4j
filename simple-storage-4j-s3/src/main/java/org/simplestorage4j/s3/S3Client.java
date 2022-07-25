@@ -84,11 +84,6 @@ public class S3Client {
 		val credentials = new BasicAWSCredentials(s3Params.getAccessKey(), s3Params.getSecretKey());
 
 		val clientConfig = new ClientConfiguration();
-		// clientConfig.setDisableSocketProxy(true);
-		// clientConfig.setNonProxyHosts("fr.world.socgen");
-
-		// val httpClientConfig = clientConfig.getApacheHttpClientConfig();
-		// httpClientConfig.getSslSocketFactory().
 
 		String endpoint = s3Params.getEndpoint();
 		String region = s3Params.getRegion();

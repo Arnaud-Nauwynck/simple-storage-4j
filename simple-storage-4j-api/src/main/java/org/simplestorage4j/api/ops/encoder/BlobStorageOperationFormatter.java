@@ -11,6 +11,7 @@ import org.simplestorage4j.api.BlobStorageRepository;
 import org.simplestorage4j.api.ops.BlobStorageOperation;
 import org.simplestorage4j.api.ops.CopyFileStorageOperation;
 import org.simplestorage4j.api.ops.MkdirStorageOperation;
+import org.simplestorage4j.api.ops.MockSleepStorageOperation;
 import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation;
 import org.simplestorage4j.api.ops.ZipCopyFileStorageOperation.SrcStorageZipEntry;
 
@@ -78,7 +79,7 @@ public class BlobStorageOperationFormatter {
 
 			} else if (op instanceof CopyFileStorageOperation) {
 				val op2 = (CopyFileStorageOperation) op;
-				// format: "${taskId}:f:${destStorageId}:${destPath}:${srcStorageId}:${srcPath}:${fisrcFileLen}"
+				// format: "${taskId}:f:${destStorageId}:${destPath}:${srcStorageId}:${srcPath}:${srcFileLen}"
 				print('f');
 				printSep();
 				printStorageAndPath(op2.destStoragePath);
@@ -88,8 +89,24 @@ public class BlobStorageOperationFormatter {
 				print(op2.srcFileLen);
 				printLine();
 
+			} else if (op instanceof MockSleepStorageOperation) {
+				val op2 = (MockSleepStorageOperation) op;
+				// format: "${taskId}:s:${mockDurationMillis}:${destStorageId}:${srcStorageId}:${srcFileLen}:${destFileLen}"
+				print('s');
+				printSep();
+				print(op2.mockDurationMillis);
+				printSep();
+				printStorageId(op2.destStorageId);
+				printSep();
+				printStorageId(op2.srcStorageId);
+				printSep();
+				print(op2.mockSrcFileLen);
+				printSep();
+				print(op2.mockDestFileLen);
+				printLine();
+
 			} else {
-				throw new IllegalStateException("should not occur");
+				throw new IllegalStateException("should not occur: unhandled op class " + op.getClass().getSimpleName());
 			}
 		}
 
@@ -111,11 +128,15 @@ public class BlobStorageOperationFormatter {
 		}
 
 		protected void printStorageAndPath(BlobStoragePath src) {
-			out.append(src.blobStorage.id.id);
+			printStorageId(src.blobStorage.id);
 			out.append(":");
 			printQuoted(src.path);
 		}
 
+		protected void printStorageId(BlobStorageId src) {
+			out.append(src.id);
+		}
+		
 		protected void printQuoted(String path) {
 			out.append("\"");
 			out.append(path); // TODO escape '"'
@@ -147,7 +168,7 @@ public class BlobStorageOperationFormatter {
 				return null;
 			}
 			val fieldReader = new SeparatedFieldReader(line);
-			val taskId = fieldReader.readIntSep();
+			val taskId = fieldReader.readLongSep();
 			val taskType = fieldReader.readChar(); // expect 'd', 'z', 'f'
 			fieldReader.readSep();
 
@@ -194,6 +215,17 @@ public class BlobStorageOperationFormatter {
 				res = new CopyFileStorageOperation(jobId, taskId, destStoragePath, srcStoragePath, srcFileLen);
 			} break;
 
+			case 's': {
+				// format: "${taskId}:s:${mockDurationMillis}:${destStorageId}:${srcStorageId}:${srcFileLen}:${destFileLen}"
+				val mockDurationMillis = fieldReader.readIntSep();
+				val srcStorageId = readBlobStorageIdSep(fieldReader);
+				val destStorageId = readBlobStorageIdSep(fieldReader);
+				val mockSrcFileLen = fieldReader.readLongSep();
+				val mockDestFileLen = fieldReader.readLongSep();
+				res = new MockSleepStorageOperation(jobId, taskId, mockDurationMillis, 
+						destStorageId, srcStorageId, mockDestFileLen, mockSrcFileLen);
+			} break;
+			
 			default:
 				throw new IllegalStateException("should not occur expected taskType {d|z|f}, got " + line);
 			}
@@ -206,6 +238,11 @@ public class BlobStorageOperationFormatter {
 			val path = fieldReader.readQuoted();
 			val blobStoragePath = new BlobStoragePath(blobStorage, path);
 			return blobStoragePath;
+		}
+
+		private BlobStorageId readBlobStorageIdSep(SeparatedFieldReader fieldReader) {
+			val blobStorageId = fieldReader.readStringSep();
+			return new BlobStorageId(blobStorageId);
 		}
 
 		private BlobStorage readBlobStorageSep(SeparatedFieldReader fieldReader) {

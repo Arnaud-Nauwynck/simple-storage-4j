@@ -110,32 +110,13 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 	
-//	public static BlobStorageJobOperationsExecQueue fromData(
-//			long jobId,
-//			BlobStorageOperationExecQueueHook opHook,
-//			boolean keepDoneOps,
-//			BlobStorageOperationsQueueDTO data) {
-//		val res = new BlobStorageJobOperationsExecQueue(
-//				jobId, opHook, keepDoneOps,
-//				null // queuedOps
-//				);
-//		res.setReloadedData(data);
-//		return res;
-//	}
-	
-	public void setReloadedData(BlobStorageOperationsQueueDTO data) {
-		QueueStatsDTO dataQueueStats = (data != null)? data.queueStats : null;
-		if (dataQueueStats != null) {
-			this.doneOpsCount = dataQueueStats.doneOpsCount;
-			
-			// TOADD..
-			// res.errorOps = 
-			// res.warningOps = 
-	
-			this.queuePreEstimateIOCosts.incr(dataQueueStats.perStorageQueuedPreEstimateIOCosts);
-			// transient.. lost  res.runningPreEstimateIOCosts.incr(dataQueueStats.perStorageRunningPreEstimateIOCosts);
-			this.perStoragesIOTimeCounter.incr(dataQueueStats.perStorageDoneStats);
-			this.perStoragesErrorIOTimeCounter.incr(dataQueueStats.perStorageErrorStats);
+	public void setReloadedData(BlobStorageOperationsQueueDTO data, List<BlobStorageOperationResult> doneResults) {
+		this.taskIdGenerator.set(data.taskIdGenerator);
+		if (doneResults != null) {
+			this.doneOpsCount = doneResults.size();
+			for(val opResult : doneResults) {
+				this.perStoragesIOTimeCounter.incr(opResult.ioTimePerStorage);
+			}
 		}
 	}
 
@@ -177,6 +158,16 @@ public class BlobStorageJobOperationsExecQueue {
 		}
 	}
 
+	public void reevalQueuePreEstimateIOCosts() {
+		queuePreEstimateIOCosts.clear();
+		synchronized(lock) {
+			for(val op: queuedOps) {
+				val opPreEstimateCost = op.preEstimateExecutionCost();
+				queuePreEstimateIOCosts.incr(opPreEstimateCost);
+			}
+		}
+	}
+	
 	/**
 	 * @return polled op, transfered to 'runningOps'.. to be marked when done/failed by caller
 	 */
@@ -369,20 +360,16 @@ public class BlobStorageJobOperationsExecQueue {
 		// queuedOps => persisted in file
 		// runningOps => transient NOT persisted, lost.. but will be re-executed later 
 	
-		// warningOps, errorOps => not in separate file?..
+		// warningOps, errorOps => TOADD in separate file?..
 
-		public QueueStatsDTO queueStats;
-		// public PerBlobStoragesPreEstimateIOCostDTO queuePreEstimateIOCosts;
-		// public PerBlobStoragesPreEstimateIOCostDTO runningPreEstimateIOCosts;
-		// public PerBlobStoragesIOTimeResultDTO perStoragesIOTimeCounter;
-		// public PerBlobStoragesIOTimeResultDTO  perStoragesErrorIOTimeCounter;
+		// queuePreEstimateIOCosts => recomputed while re-filling ops
+		// runningPreEstimateIOCosts => transient
+		// perStoragesIOTimeCounter, perStoragesErrorIOTimeCounter => in separate "statistics.json" file (saved periodically)
 
 	}
 	
 	public BlobStorageOperationsQueueDTO toDTO() {
-		return new BlobStorageOperationsQueueDTO(
-				taskIdGenerator.get(),
-				toQueueStatsDTO());
+		return new BlobStorageOperationsQueueDTO(taskIdGenerator.get());
 	}
 
 }

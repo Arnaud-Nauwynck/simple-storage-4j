@@ -1,4 +1,8 @@
 
+logging:
+  level:
+    root: INFO
+
 storage-app:
   blob-storages:
     - id: store1
@@ -11,9 +15,9 @@ storage-app:
       url: ../simple-storage-4j-ops-executor/config/store2
 
 storage-app-server:
+  periodicCheckSeconds: 30
   sessions:
-    maxPingAliveSeconds: 240
-    checkSessionAlivePeriodSeconds: 30
+    maxPingAliveSeconds: 180
 
   serverAuthHeaderName: api-key
   authApiKeys:
@@ -21,4 +25,9 @@ storage-app-server:
       principal: test-executor
       authorities:
         - executor
-       
+
+  stateStorage:
+    id: stateStorage
+    groupId: local
+    classname: FileBlobStorage
+    url: config/stateStorage

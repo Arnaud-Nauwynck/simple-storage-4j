@@ -5,13 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.simplestorage4j.api.util.BlobStorageUtils;
@@ -44,49 +38,10 @@ public class StorageOpsExecutorSessionService {
 	@Value("${storage-app-server.sessions.maxPingAliveSeconds:180}")
 	private long maxPingAliveSeconds = 3 * 60;
 
-	@Value("${storage-app-server.sessions.checkSessionAlivePeriodSeconds:30}")
-	private long checkSessionAlivePeriodSeconds = 30;
-
-	private ScheduledExecutorService scheduledExecutor;
-	private ScheduledFuture<?> scheduled;
-
 	// ------------------------------------------------------------------------
 
-	@PostConstruct
-	public void init() {
-		this.scheduledExecutor = createDefaultScheduledExecutor();
-		startScheduleCheckPingAlives();
-	}
 
-	private static ScheduledExecutorService createDefaultScheduledExecutor() {
-		ThreadFactory threadFactory = new ThreadFactory() {
-			@Override
-			public Thread newThread(Runnable r) {
-				val res = new Thread(r, "check-session-ping-alive");
-				res.setDaemon(true);
-				return res;
-			}
-		};
-		return Executors.newScheduledThreadPool(1, threadFactory);
-	}
-
-	public void startScheduleCheckPingAlives() {
-		if (this.scheduled != null) {
-			return;
-		}
-		this.scheduled = scheduledExecutor.scheduleAtFixedRate(() -> checkSessionsAlive(),
-				checkSessionAlivePeriodSeconds, checkSessionAlivePeriodSeconds, TimeUnit.SECONDS);
-	}
-
-	public void stopScheduleCheckPingAlives() {
-		if (this.scheduled != null) {
-			return;
-		}
-		this.scheduled.cancel(false);
-		this.scheduled = null;
-	}
-
-	private void checkSessionsAlive() {
+	public void checkSessionsAlive() {
 		val deadSessions = new ArrayList<StorageOpsExecutorSessionEntry>();
 		val now = System.currentTimeMillis();
 		val maxPingAliveMillis = maxPingAliveSeconds * 1000;

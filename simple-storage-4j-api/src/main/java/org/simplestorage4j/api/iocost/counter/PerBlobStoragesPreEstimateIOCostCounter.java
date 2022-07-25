@@ -98,6 +98,9 @@ public class PerBlobStoragesPreEstimateIOCostCounter {
 		storageCounter.decr(src);
 	}
 
+	public void clear() {
+		perStorage.clear();
+	}
 
 	// ------------------------------------------------------------------------
 	

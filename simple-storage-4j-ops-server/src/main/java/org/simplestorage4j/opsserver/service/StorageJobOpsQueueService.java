@@ -409,9 +409,8 @@ public class StorageJobOpsQueueService {
 		val queueBaseDirPath = storageJobOpsQueueDao.toDirPath(jobId);
 		val queue = new BlobStorageJobOperationsPersistedQueue(jobId, 
 				storage, queueBaseDirPath);
-		// reload queue statistics
-		// + re-fill in-memory remaining ops from file ... TODO
-		queue.setReloadedData(jobQueueData.queueData);
+		// reload queue statistics + re-fill in-memory remaining ops from file
+		queue.setReloadedData(jobQueueData.queueData, dtoMapper.getBlobStorageRepository());
 		synchronized(lock) {
 			val entry = new StorageJobOpsQueueEntry(jobId, 
 					jobQueueData.createTime, jobQueueData.displayMessage, 
@@ -443,6 +442,14 @@ public class StorageJobOpsQueueService {
 	private void updateJobQueueData(StorageJobOpsQueueEntry entry, int way) {
 		val data = entry.toData();
 		storageJobOpsQueueDao.updateJobQueueData(data, way);
+	}
+
+	public void periodicCheckFlushFiles() {
+		synchronized(lock) {
+			for(val entry: activeJobQueues) {
+				entry.queue.periodicCheckFlushFiles();
+			}
+		}		
 	}
 
 }

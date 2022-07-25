@@ -12,6 +12,7 @@ import org.simplestorage4j.api.ops.dto.BlobStorageOperationDTO.MockSleepStorageO
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import lombok.Getter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
 
@@ -19,29 +20,30 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
+@Getter
 public class MockSleepStorageOperation extends BlobStorageOperation {
 
-	private final int mockDurationMillis;
-	private final BlobStorageId srcStorageId;
-	private final BlobStorageId destStorageId;
-	private final long mockSrcFileLen;
-	private final long mockDestFileLen;
-	
+	public final int mockDurationMillis;
+	public final BlobStorageId destStorageId;
+	public final BlobStorageId srcStorageId;
+	public final long mockDestFileLen;
+	public final long mockSrcFileLen;
+
 	// ------------------------------------------------------------------------
 	
     public MockSleepStorageOperation(long jobId, long taskId, //
     		int mockDurationMillis,
+    		BlobStorageId destStorageId,
     		BlobStorageId srcStorageId,
-			BlobStorageId destStorageId,
-			long mockSrcFileLen,
-			long mockDestFileLen
+    		long mockDestFileLen,
+			long mockSrcFileLen
     		) {
         super(jobId, taskId);
         this.mockDurationMillis = mockDurationMillis;
-        this.srcStorageId = srcStorageId;
         this.destStorageId = destStorageId;
-        this.mockSrcFileLen = mockSrcFileLen;
+        this.srcStorageId = srcStorageId;
         this.mockDestFileLen = mockDestFileLen;
+        this.mockSrcFileLen = mockSrcFileLen;
     }
 
     // ------------------------------------------------------------------------
@@ -101,10 +103,10 @@ public class MockSleepStorageOperation extends BlobStorageOperation {
     public String toString() {
         return "{mock-sleep " + taskId //
 				+ mockDurationMillis + " ms" //
-				+ ((srcStorageId != null)? " srcStorageId:" + srcStorageId : "")
 				+ ((destStorageId != null)? " destStorageId:" + destStorageId : "")
-				+ ((mockSrcFileLen != 0)? " mockSrcFileLen:" + mockSrcFileLen : "")
+				+ ((srcStorageId != null)? " srcStorageId:" + srcStorageId : "")
 				+ ((mockDestFileLen != 0 && mockDestFileLen != mockSrcFileLen)? " mockDestFileLen:" + mockSrcFileLen : "")
+				+ ((mockSrcFileLen != 0)? " mockSrcFileLen:" + mockSrcFileLen : "")
         		+ "}";
     }
 

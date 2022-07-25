@@ -26,10 +26,12 @@ import org.simplestorage4j.api.util.BlobStorageUtils;
 
 import com.google.common.collect.ImmutableList;
 
+import lombok.Getter;
 import lombok.val;
 
 public class BlobStorageOperationDtoResolver {
 
+	@Getter
 	private final BlobStorageRepository blobStorageRepository;
 	
 	// ------------------------------------------------------------------------
